@@ -17,9 +17,11 @@ export const translations = {
     optionPlaceholder: "ระบุชื่อตัวเลือก...",
     priceLabel: "ราคา (บาท)",
     qtyLabel: "ปริมาณ / จำนวน",
+    packQtyLabel: "จำนวนแพค",
     unitLabel: "หน่วย (เช่น ชิ้น, กรัม, มล.)",
     customUnitPlaceholder: "หรือระบุหน่วยเอง...",
     bestValueBadge: "คุ้มที่สุด อันดับ #1",
+    bestValueHighlight: "🏆 คุ้มที่สุด",
     bestValueSubtitle: (total: number) =>
       `ตัวเลือกที่ประหยัดที่สุดจากการเทียบ ${total} ตัวเลือก`,
     optionRankLabel: (rank: number) => `ตัวเลือกที่ ${rank}`,
@@ -32,10 +34,10 @@ export const translations = {
     receiptFooter: 'คำนวณโดยระบบเปรียบเทียบ "คุ้มไหม?"',
     unitPresets: ["ชิ้น", "กรัม", "มล.", "กก.", "ลิตร"],
     packModeToggle: "โหมดซื้อแพค",
-    packCountLabel: "จำนวนชิ้นในแพค",
+    packCountLabel: "จำนวนชิ้นใน 1 แพค",
     packCountPlaceholder: "3",
     calcExplanation: (price: string, qty: string, pack: string, unitPrice: string, unit: string) =>
-      `↳ ราคาจริง/หน่วย = ${price} ÷ (${qty}×${pack}) = ฿${unitPrice} / ${unit}`,
+      `↳ ราคาจริง/หน่วย = ${price} ÷ (${qty} แพค × ${pack} ชิ้น) = ฿${unitPrice} / ${unit}`,
     packTag: (count: string) => `แพค ${count} ชิ้น`,
   },
   en: {
@@ -54,9 +56,11 @@ export const translations = {
     optionPlaceholder: "Enter option name...",
     priceLabel: "Price (THB)",
     qtyLabel: "Quantity / Volume",
+    packQtyLabel: "Pack Quantity",
     unitLabel: "Unit (e.g. pcs, g, ml)",
     customUnitPlaceholder: "Or custom unit...",
     bestValueBadge: "Best Value #1",
+    bestValueHighlight: "🏆 Best Value",
     bestValueSubtitle: (total: number) =>
       `Most economical choice out of ${total} options`,
     optionRankLabel: (rank: number) => `Option ${rank}`,
@@ -72,7 +76,7 @@ export const translations = {
     packCountLabel: "Items per pack",
     packCountPlaceholder: "3",
     calcExplanation: (price: string, qty: string, pack: string, unitPrice: string, unit: string) =>
-      `↳ Real unit price = ${price} ÷ (${qty}×${pack}) = ฿${unitPrice} / ${unit}`,
+      `↳ Real unit price = ${price} ÷ (${qty} packs × ${pack} pcs) = ฿${unitPrice} / ${unit}`,
     packTag: (count: string) => `Pack of ${count}`,
   },
 } as const;

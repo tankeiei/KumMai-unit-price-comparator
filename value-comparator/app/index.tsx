@@ -155,6 +155,7 @@ export default function ComparatorScreen() {
                 onRemove={() => removeItem(item.id)}
                 activeColors={activeColors}
                 language={language}
+                isBest={bestItem !== null && item.id === bestItem.id && rankedItems.length > 0}
               />
             ))}
           </View>

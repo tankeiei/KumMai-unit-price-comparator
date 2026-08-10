@@ -73,9 +73,25 @@ export const useComparatorStore = create<ComparatorState>()(
       removeItem: (id) =>
         set((state) => {
           if (state.items.length <= 2) return state; // Keep minimum 2 options
-          return {
-            items: state.items.filter((item) => item.id !== id),
-          };
+          const remaining = state.items.filter((item) => item.id !== id);
+          const t = translations[state.language] || translations.th;
+
+          const reordered = remaining.map((item, index) => {
+            const letter = String.fromCharCode(65 + index);
+            const trimmed = item.name.trim();
+            const isDefaultTH = /^ตัวเลือก\s+[A-Z]$/i.test(trimmed);
+            const isDefaultEN = /^Option\s+[A-Z]$/i.test(trimmed);
+
+            if (isDefaultTH || isDefaultEN || !trimmed) {
+              return {
+                ...item,
+                name: `${t.optionPrefix} ${letter}`,
+              };
+            }
+            return item;
+          });
+
+          return { items: reordered };
         }),
 
       resetItems: () =>

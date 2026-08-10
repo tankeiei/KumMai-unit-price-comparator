@@ -1,10 +1,9 @@
 import { ComparisonItem, ComputedItem, LanguageMode, RankedItem } from "../types";
 import { getTranslation } from "../constants/translations";
+import { findUnitDefinition } from "../constants/units";
 
 /**
- * Computes unit price for a single item.
- * Valid if price > 0 and qty > 0.
- * If isPack is true, effectiveQty = qty * packCount.
+ * Computes unit price and normalized base unit price for a single item.
  */
 export function computeUnitPrice(item: ComparisonItem): ComputedItem {
   const priceNum = parseFloat(item.price);
@@ -18,7 +17,11 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
     }
   }
 
-  const effectiveQty = qtyNum * packCountNum;
+  const unitDef = findUnitDefinition(item.unit);
+  const multiplier = unitDef ? unitDef.multiplierToBase : 1;
+  const baseUnitId = unitDef ? unitDef.baseUnitId : item.unit.trim().toLowerCase() || "unit";
+
+  const effectiveQty = qtyNum * packCountNum * multiplier;
 
   const isValid =
     !isNaN(priceNum) &&
@@ -38,46 +41,93 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
     };
   }
 
-  const unitPrice = priceNum / effectiveQty;
+  const rawUnitPrice = priceNum / (qtyNum * packCountNum);
+  const baseUnitPrice = priceNum / effectiveQty;
+
   return {
     ...item,
-    unitPrice,
+    unitPrice: rawUnitPrice,
     effectiveQty,
     valid: true,
+    baseUnitId,
+    baseUnitPrice,
   };
 }
 
 /**
- * Ranks valid items from lowest unit price (rank 1) to highest unit price.
- * Attaches rank and percentage difference compared to the best option.
+ * Ranks valid items from lowest base unit price (rank 1) to highest.
+ * Automatically normalizes unit scales (e.g., g vs kg, ml vs L, doz vs pcs).
  */
-export function rankItems(items: ComparisonItem[]): RankedItem[] {
+export function rankItems(items: ComparisonItem[], lang: LanguageMode = "th"): RankedItem[] {
   const computed = items.map(computeUnitPrice);
-  const validItems = computed.filter((item): item is ComputedItem & { unitPrice: number } => 
-    item.valid && item.unitPrice !== null
+  const validItems = computed.filter(
+    (item): item is ComputedItem & { baseUnitPrice: number; unitPrice: number } =>
+      item.valid && item.baseUnitPrice !== undefined && item.baseUnitPrice !== null
   );
 
   if (validItems.length === 0) {
     return [];
   }
 
-  // Sort ascending by unit price
-  const sorted = [...validItems].sort((a, b) => a.unitPrice - b.unitPrice);
+  // Sort ascending by base unit price
+  const sorted = [...validItems].sort((a, b) => a.baseUnitPrice - b.baseUnitPrice);
 
-  const bestUnitPrice = sorted[0].unitPrice;
+  const bestBaseUnitPrice = sorted[0].baseUnitPrice;
+
+  // Determine if items share the same baseUnitId (e.g., all "g", all "ml", or all "pcs")
+  const primaryBaseUnitId = sorted[0].baseUnitId;
+  const allSameCategory = sorted.every((it) => it.baseUnitId === primaryBaseUnitId);
 
   return sorted.map((item, index) => {
     const rank = index + 1;
     let pctMoreExpensive = 0;
 
-    if (bestUnitPrice > 0 && rank > 1) {
-      pctMoreExpensive = ((item.unitPrice - bestUnitPrice) / bestUnitPrice) * 100;
+    if (bestBaseUnitPrice > 0 && rank > 1) {
+      pctMoreExpensive = ((item.baseUnitPrice - bestBaseUnitPrice) / bestBaseUnitPrice) * 100;
+    }
+
+    let displayUnitPrice = item.unitPrice;
+    let displayUnit = item.unit || (lang === "en" ? "unit" : "หน่วย");
+
+    // If all items are in the same category and converted (e.g. g vs kg, ml vs L)
+    if (allSameCategory && primaryBaseUnitId) {
+      if (primaryBaseUnitId === "g") {
+        // If price per gram is small, display as per kg for cleaner numbers if any item was in kg or large volume
+        const hasKg = sorted.some((it) => {
+          const def = findUnitDefinition(it.unit);
+          return def?.id === "kg";
+        });
+        if (hasKg || bestBaseUnitPrice < 0.5) {
+          displayUnitPrice = item.baseUnitPrice * 1000;
+          displayUnit = lang === "en" ? "kg" : "กก.";
+        } else {
+          displayUnitPrice = item.baseUnitPrice;
+          displayUnit = lang === "en" ? "g" : "กรัม";
+        }
+      } else if (primaryBaseUnitId === "ml") {
+        const hasL = sorted.some((it) => {
+          const def = findUnitDefinition(it.unit);
+          return def?.id === "l";
+        });
+        if (hasL || bestBaseUnitPrice < 0.5) {
+          displayUnitPrice = item.baseUnitPrice * 1000;
+          displayUnit = lang === "en" ? "L" : "ลิตร";
+        } else {
+          displayUnitPrice = item.baseUnitPrice;
+          displayUnit = lang === "en" ? "ml" : "มล.";
+        }
+      } else if (primaryBaseUnitId === "pcs") {
+        displayUnitPrice = item.baseUnitPrice;
+        displayUnit = lang === "en" ? "pcs" : "ชิ้น";
+      }
     }
 
     return {
       ...item,
       rank,
       pctMoreExpensive,
+      displayUnitPrice,
+      displayUnit,
     };
   });
 }

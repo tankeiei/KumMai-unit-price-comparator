@@ -15,9 +15,12 @@ interface ResultRowProps {
 export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) => {
   const t = getTranslation(language);
 
+  const targetPrice = item.displayUnitPrice ?? item.unitPrice;
+  const targetUnit = item.displayUnit || item.unit || t.defaultUnit;
+
   const formattedUnitPrice =
-    item.unitPrice !== null
-      ? item.unitPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
+    targetPrice !== null && targetPrice !== undefined
+      ? targetPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 3,
         })
@@ -96,7 +99,7 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
               color: colors.paperInk + "99",
             }}
           >
-            ฿{formattedUnitPrice} / {item.unit || t.defaultUnit}
+            ฿{formattedUnitPrice} / {targetUnit}
           </Text>
         </View>
       </View>

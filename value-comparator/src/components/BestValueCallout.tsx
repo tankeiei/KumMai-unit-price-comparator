@@ -21,9 +21,12 @@ export const BestValueCallout: React.FC<BestValueCalloutProps> = ({
 }) => {
   const t = getTranslation(language);
 
+  const targetPrice = bestItem.displayUnitPrice ?? bestItem.unitPrice;
+  const targetUnit = bestItem.displayUnit || bestItem.unit || t.defaultUnit;
+
   const formattedUnitPrice =
-    bestItem.unitPrice !== null
-      ? bestItem.unitPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
+    targetPrice !== null && targetPrice !== undefined
+      ? targetPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 3,
         })
@@ -102,7 +105,7 @@ export const BestValueCallout: React.FC<BestValueCalloutProps> = ({
           marginVertical: 4,
         }}
       >
-        ฿{formattedUnitPrice} / {bestItem.unit || t.defaultUnit}
+        ฿{formattedUnitPrice} / {targetUnit}
       </Text>
 
       {/* Subtitle Info */}

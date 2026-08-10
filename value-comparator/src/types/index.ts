@@ -15,6 +15,10 @@ export type ComputedItem = ComparisonItem & {
   unitPrice: number | null;
   effectiveQty: number | null;
   valid: boolean;
+  baseUnitId?: string;
+  baseUnitPrice?: number | null;
+  displayUnitPrice?: number | null;
+  displayUnit?: string;
 };
 
 export type RankedItem = ComputedItem & {

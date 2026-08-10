@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
 import { Trash2, Package, Trophy } from "lucide-react-native";
 import { ComparisonItem, LanguageMode } from "../types";
 import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { getTranslation } from "../constants/translations";
+import { UNIT_PRESETS, UnitCategory } from "../constants/units";
 import { UnitChip } from "./UnitChip";
+import { CategoryTab } from "./CategoryTab";
 
 interface ItemCardProps {
   item: ComparisonItem;
@@ -29,6 +31,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isBest = false,
 }) => {
   const t = getTranslation(language);
+  const [activeCategory, setActiveCategory] = useState<UnitCategory>("all");
 
   const priceNum = parseFloat(item.price);
   const qtyNum = parseFloat(item.qty);
@@ -54,6 +57,25 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       : "-";
 
   const qtyLabelText = isPackActive ? t.packQtyLabel : t.qtyLabel;
+
+  const filteredPresets = UNIT_PRESETS.filter(
+    (preset) => activeCategory === "all" || preset.category === activeCategory
+  );
+
+  const handleSelectCategory = (cat: UnitCategory) => {
+    setActiveCategory(cat);
+    if (cat !== "all") {
+      const presetsInCat = UNIT_PRESETS.filter((p) => p.category === cat);
+      const isCurrentUnitInCat = presetsInCat.some(
+        (p) => p.labelTh === item.unit || p.labelEn === item.unit
+      );
+      if (!isCurrentUnitInCat && presetsInCat.length > 0) {
+        const firstPresetLabel =
+          language === "en" ? presetsInCat[0].labelEn : presetsInCat[0].labelTh;
+        onUpdate("unit", firstPresetLabel);
+      }
+    }
+  };
 
   return (
     <View
@@ -268,7 +290,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </View>
       </View>
 
-      {/* Unit Selection Row & Custom Input */}
+      {/* Unit Selection Row with Category Tabs & Icon Chips */}
       <View style={{ marginBottom: 14 }}>
         <Text
           style={{
@@ -282,18 +304,33 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           {t.unitLabel}
         </Text>
 
+        {/* Category Tabs */}
+        <CategoryTab
+          activeCategory={activeCategory}
+          onSelectCategory={handleSelectCategory}
+          activeColors={activeColors}
+          language={language}
+        />
+
+        {/* Icon Unit Chips */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 6 }}>
-          {t.unitPresets.map((preset) => (
-            <UnitChip
-              key={preset}
-              label={preset}
-              isSelected={item.unit === preset}
-              onSelect={() => onUpdate("unit", preset)}
-              activeColors={activeColors}
-            />
-          ))}
+          {filteredPresets.map((preset) => {
+            const chipLabel = language === "en" ? preset.labelEn : preset.labelTh;
+            const isSelected = item.unit === chipLabel || item.unit === preset.labelTh || item.unit === preset.labelEn;
+            return (
+              <UnitChip
+                key={preset.id}
+                label={chipLabel}
+                icon={preset.icon}
+                isSelected={isSelected}
+                onSelect={() => onUpdate("unit", chipLabel)}
+                activeColors={activeColors}
+              />
+            );
+          })}
         </View>
 
+        {/* Custom Unit Input */}
         <TextInput
           value={item.unit}
           onChangeText={(text) => onUpdate("unit", text)}

@@ -18,7 +18,7 @@ export const translations = {
     priceLabel: "ราคา (บาท)",
     qtyLabel: "ปริมาณ / จำนวน",
     packQtyLabel: "จำนวนแพค",
-    unitLabel: "หน่วย (เช่น ชิ้น, กรัม, มล.)",
+    unitLabel: "หน่วยสินค้า",
     customUnitPlaceholder: "หรือระบุหน่วยเอง...",
     bestValueBadge: "คุ้มที่สุด อันดับ #1",
     bestValueHighlight: "🏆 คุ้มที่สุด",
@@ -39,6 +39,10 @@ export const translations = {
     calcExplanation: (price: string, qty: string, pack: string, unitPrice: string, unit: string) =>
       `↳ ราคาจริง/หน่วย = ${price} ÷ (${qty} แพค × ${pack} ชิ้น) = ฿${unitPrice} / ${unit}`,
     packTag: (count: string) => `แพค ${count} ชิ้น`,
+    categoryAll: "ทั้งหมด",
+    categoryLiquid: "💧 ของเหลว",
+    categoryWeight: "⚖️ น้ำหนัก",
+    categoryCount: "🏷️ นับชิ้น",
   },
   en: {
     appTitle: "Value Match",
@@ -57,7 +61,7 @@ export const translations = {
     priceLabel: "Price (THB)",
     qtyLabel: "Quantity / Volume",
     packQtyLabel: "Pack Quantity",
-    unitLabel: "Unit (e.g. pcs, g, ml)",
+    unitLabel: "Unit",
     customUnitPlaceholder: "Or custom unit...",
     bestValueBadge: "Best Value #1",
     bestValueHighlight: "🏆 Best Value",
@@ -78,6 +82,10 @@ export const translations = {
     calcExplanation: (price: string, qty: string, pack: string, unitPrice: string, unit: string) =>
       `↳ Real unit price = ${price} ÷ (${qty} packs × ${pack} pcs) = ฿${unitPrice} / ${unit}`,
     packTag: (count: string) => `Pack of ${count}`,
+    categoryAll: "All",
+    categoryLiquid: "💧 Liquid",
+    categoryWeight: "⚖️ Weight",
+    categoryCount: "🏷️ Count",
   },
 } as const;
 

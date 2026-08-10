@@ -4,10 +4,21 @@ import { getTranslation } from "../constants/translations";
 /**
  * Computes unit price for a single item.
  * Valid if price > 0 and qty > 0.
+ * If isPack is true, effectiveQty = qty * packCount.
  */
 export function computeUnitPrice(item: ComparisonItem): ComputedItem {
   const priceNum = parseFloat(item.price);
   const qtyNum = parseFloat(item.qty);
+
+  let packCountNum = 1;
+  if (item.isPack) {
+    const parsedPack = parseFloat(item.packCount || "1");
+    if (!isNaN(parsedPack) && parsedPack > 0 && isFinite(parsedPack)) {
+      packCountNum = parsedPack;
+    }
+  }
+
+  const effectiveQty = qtyNum * packCountNum;
 
   const isValid =
     !isNaN(priceNum) &&
@@ -15,20 +26,23 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
     priceNum > 0 &&
     qtyNum > 0 &&
     isFinite(priceNum) &&
-    isFinite(qtyNum);
+    isFinite(qtyNum) &&
+    effectiveQty > 0;
 
   if (!isValid) {
     return {
       ...item,
       unitPrice: null,
+      effectiveQty: null,
       valid: false,
     };
   }
 
-  const unitPrice = priceNum / qtyNum;
+  const unitPrice = priceNum / effectiveQty;
   return {
     ...item,
     unitPrice,
+    effectiveQty,
     valid: true,
   };
 }
@@ -80,8 +94,15 @@ export function buildSummary(rankedItems: RankedItem[], lang: LanguageMode = "th
   const best = rankedItems[0];
   const worst = rankedItems[rankedItems.length - 1];
 
-  const bestName = best.name.trim() || t.optionRankLabel(best.rank);
-  const worstName = worst.name.trim() || t.optionRankLabel(worst.rank);
+  let bestName = best.name.trim() || t.optionRankLabel(best.rank);
+  if (best.isPack && best.packCount && parseFloat(best.packCount) > 1) {
+    bestName += ` (${t.packTag(best.packCount)})`;
+  }
+
+  let worstName = worst.name.trim() || t.optionRankLabel(worst.rank);
+  if (worst.isPack && worst.packCount && parseFloat(worst.packCount) > 1) {
+    worstName += ` (${t.packTag(worst.packCount)})`;
+  }
 
   const diffPct = worst.pctMoreExpensive;
   const formattedPct = diffPct % 1 === 0 ? diffPct.toFixed(0) : diffPct.toFixed(1);

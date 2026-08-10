@@ -1,6 +1,6 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
-import { Trash2 } from "lucide-react-native";
+import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
+import { Trash2, Package } from "lucide-react-native";
 import { ComparisonItem, LanguageMode } from "../types";
 import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
@@ -11,7 +11,7 @@ interface ItemCardProps {
   item: ComparisonItem;
   index: number;
   totalCount: number;
-  onUpdate: (field: keyof ComparisonItem, value: string) => void;
+  onUpdate: (field: keyof ComparisonItem, value: any) => void;
   onRemove: () => void;
   activeColors: AppColors;
   language: LanguageMode;
@@ -27,6 +27,29 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   language,
 }) => {
   const t = getTranslation(language);
+
+  const priceNum = parseFloat(item.price);
+  const qtyNum = parseFloat(item.qty);
+  const isPackActive = !!item.isPack;
+  const packCountNum = parseFloat(item.packCount || "1");
+
+  const isCalculationValid =
+    !isNaN(priceNum) &&
+    !isNaN(qtyNum) &&
+    priceNum > 0 &&
+    qtyNum > 0 &&
+    isPackActive &&
+    !isNaN(packCountNum) &&
+    packCountNum > 0;
+
+  const unitPriceVal = isCalculationValid ? priceNum / (qtyNum * packCountNum) : null;
+  const formattedUnitPrice =
+    unitPriceVal !== null
+      ? unitPriceVal.toLocaleString(language === "en" ? "en-US" : "th-TH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 3,
+        })
+      : "-";
 
   return (
     <View
@@ -209,7 +232,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       </View>
 
       {/* Unit Selection Row & Custom Input */}
-      <View>
+      <View style={{ marginBottom: 14 }}>
         <Text
           style={{
             fontFamily: fonts.mono,
@@ -251,6 +274,118 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             color: activeColors.ink,
           }}
         />
+      </View>
+
+      {/* Pack Mode Toggle Header & Section */}
+      <View
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: activeColors.panelBorder + "80",
+          paddingTop: 12,
+        }}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Package size={16} color={activeColors.accent} />
+            <Text
+              style={{
+                fontFamily: fonts.display,
+                fontSize: 14,
+                color: activeColors.ink,
+              }}
+            >
+              {t.packModeToggle}
+            </Text>
+          </View>
+
+          <Switch
+            value={isPackActive}
+            onValueChange={(val) => onUpdate("isPack", val)}
+            trackColor={{
+              false: activeColors.bg,
+              true: activeColors.accent + "80",
+            }}
+            thumbColor={isPackActive ? activeColors.accent : activeColors.inkDim}
+          />
+        </View>
+
+        {/* Expanded Pack Details */}
+        {isPackActive && (
+          <View
+            style={{
+              marginTop: 10,
+              backgroundColor: activeColors.bg,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: activeColors.panelBorder,
+              padding: 12,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.body,
+                  fontSize: 13,
+                  color: activeColors.inkDim,
+                  flex: 1,
+                }}
+              >
+                {t.packCountLabel}:
+              </Text>
+
+              <View
+                style={{
+                  width: 80,
+                  backgroundColor: activeColors.panel,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: activeColors.panelBorder,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                }}
+              >
+                <TextInput
+                  value={item.packCount ?? "1"}
+                  onChangeText={(text) => onUpdate("packCount", text)}
+                  placeholder={t.packCountPlaceholder}
+                  placeholderTextColor={activeColors.inkDim + "60"}
+                  keyboardType="numeric"
+                  style={{
+                    fontFamily: fonts.mono,
+                    fontSize: 16,
+                    color: activeColors.ink,
+                    textAlign: "center",
+                    padding: 0,
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Formula Explanation Preview */}
+            <Text
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 11,
+                color: activeColors.accent,
+                marginTop: 8,
+              }}
+            >
+              {t.calcExplanation(
+                item.price || "0",
+                item.qty || "0",
+                item.packCount || "1",
+                formattedUnitPrice,
+                item.unit || t.defaultUnit
+              )}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );

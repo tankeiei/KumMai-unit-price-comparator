@@ -31,6 +31,12 @@ export const translations = {
       "กรอกราคาและจำนวนอย่างน้อย 1 ตัวเลือก\nเพื่อดูการเปรียบเทียบราคาต่อหน่วย",
     receiptFooter: 'คำนวณโดยระบบเปรียบเทียบ "คุ้มไหม?"',
     unitPresets: ["ชิ้น", "กรัม", "มล.", "กก.", "ลิตร"],
+    packModeToggle: "โหมดซื้อแพค",
+    packCountLabel: "จำนวนชิ้นในแพค",
+    packCountPlaceholder: "3",
+    calcExplanation: (price: string, qty: string, pack: string, unitPrice: string, unit: string) =>
+      `↳ ราคาจริง/หน่วย = ${price} ÷ (${qty}×${pack}) = ฿${unitPrice} / ${unit}`,
+    packTag: (count: string) => `แพค ${count} ชิ้น`,
   },
   en: {
     appTitle: "Value Match",
@@ -62,6 +68,12 @@ export const translations = {
       "Fill price & quantity for at least 1 option\nto view unit price comparison",
     receiptFooter: 'Calculated by "Value Match"',
     unitPresets: ["pcs", "g", "ml", "kg", "L"],
+    packModeToggle: "Pack Mode",
+    packCountLabel: "Items per pack",
+    packCountPlaceholder: "3",
+    calcExplanation: (price: string, qty: string, pack: string, unitPrice: string, unit: string) =>
+      `↳ Real unit price = ${price} ÷ (${qty}×${pack}) = ฿${unitPrice} / ${unit}`,
+    packTag: (count: string) => `Pack of ${count}`,
   },
 } as const;
 

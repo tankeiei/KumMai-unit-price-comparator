@@ -9,7 +9,7 @@ interface ComparatorState {
   language: LanguageMode;
   theme: ThemeMode;
   addItem: () => void;
-  updateItem: (id: string, field: keyof ComparisonItem, value: string) => void;
+  updateItem: (id: string, field: keyof ComparisonItem, value: any) => void;
   removeItem: (id: string) => void;
   resetItems: () => void;
   setLanguage: (language: LanguageMode) => void;
@@ -25,6 +25,8 @@ const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
       price: "",
       qty: "",
       unit: t.unitPresets[0] || "ชิ้น",
+      isPack: false,
+      packCount: "1",
     },
     {
       id: "2",
@@ -32,6 +34,8 @@ const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
       price: "",
       qty: "",
       unit: t.unitPresets[0] || "ชิ้น",
+      isPack: false,
+      packCount: "1",
     },
   ];
 };
@@ -53,6 +57,8 @@ export const useComparatorStore = create<ComparatorState>()(
             price: "",
             qty: "",
             unit: state.items[state.items.length - 1]?.unit || t.unitPresets[0],
+            isPack: false,
+            packCount: "1",
           };
           return { items: [...state.items, newItem] };
         }),

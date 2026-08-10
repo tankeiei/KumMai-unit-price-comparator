@@ -19,7 +19,7 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
     item.unitPrice !== null
       ? item.unitPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
           minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
+          maximumFractionDigits: 3,
         })
       : "-";
 
@@ -27,6 +27,14 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
     item.pctMoreExpensive % 1 === 0
       ? item.pctMoreExpensive.toFixed(0)
       : item.pctMoreExpensive.toFixed(1);
+
+  const packCountNum = parseFloat(item.packCount || "1");
+  const packTagStr =
+    item.isPack && !isNaN(packCountNum) && packCountNum > 1
+      ? ` (${t.packTag(item.packCount || "1")})`
+      : "";
+
+  const displayName = `${item.name || t.optionRankLabel(item.rank)}${packTagStr}`;
 
   return (
     <View
@@ -79,7 +87,7 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
             }}
             numberOfLines={1}
           >
-            {item.name || t.optionRankLabel(item.rank)}
+            {displayName}
           </Text>
           <Text
             style={{

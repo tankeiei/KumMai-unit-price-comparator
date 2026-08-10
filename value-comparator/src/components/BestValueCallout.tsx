@@ -25,11 +25,17 @@ export const BestValueCallout: React.FC<BestValueCalloutProps> = ({
     bestItem.unitPrice !== null
       ? bestItem.unitPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
           minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
+          maximumFractionDigits: 3,
         })
       : "-";
 
-  const itemName = bestItem.name.trim() || t.optionRankLabel(bestItem.rank);
+  const packCountNum = parseFloat(bestItem.packCount || "1");
+  const packTagStr =
+    bestItem.isPack && !isNaN(packCountNum) && packCountNum > 1
+      ? ` (${t.packTag(bestItem.packCount || "1")})`
+      : "";
+
+  const itemName = `${bestItem.name.trim() || t.optionRankLabel(bestItem.rank)}${packTagStr}`;
 
   return (
     <View

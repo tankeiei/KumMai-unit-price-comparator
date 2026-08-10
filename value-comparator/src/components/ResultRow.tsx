@@ -1,19 +1,23 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { Trophy } from "lucide-react-native";
-import { RankedItem } from "../types";
+import { LanguageMode, RankedItem } from "../types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { getTranslation } from "../constants/translations";
 
 interface ResultRowProps {
   item: RankedItem;
   isBest: boolean;
+  language: LanguageMode;
 }
 
-export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest }) => {
+export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) => {
+  const t = getTranslation(language);
+
   const formattedUnitPrice =
     item.unitPrice !== null
-      ? item.unitPrice.toLocaleString("th-TH", {
+      ? item.unitPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })
@@ -75,7 +79,7 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest }) => {
             }}
             numberOfLines={1}
           >
-            {item.name || `ตัวเลือกที่ ${item.rank}`}
+            {item.name || t.optionRankLabel(item.rank)}
           </Text>
           <Text
             style={{
@@ -84,7 +88,7 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest }) => {
               color: colors.paperInk + "99",
             }}
           >
-            ฿{formattedUnitPrice} / {item.unit || "หน่วย"}
+            ฿{formattedUnitPrice} / {item.unit || t.defaultUnit}
           </Text>
         </View>
       </View>
@@ -107,7 +111,7 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest }) => {
                 color: colors.paperInk,
               }}
             >
-              คุ้มที่สุด
+              {t.bestValueBadge}
             </Text>
           </View>
         ) : (

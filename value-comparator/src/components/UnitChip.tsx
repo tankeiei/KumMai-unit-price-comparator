@@ -1,26 +1,28 @@
 import React from "react";
 import { TouchableOpacity, Text } from "react-native";
-import { colors } from "../theme/colors";
+import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 
 interface UnitChipProps {
   label: string;
   isSelected: boolean;
   onSelect: () => void;
+  activeColors: AppColors;
 }
 
 export const UnitChip: React.FC<UnitChipProps> = ({
   label,
   isSelected,
   onSelect,
+  activeColors,
 }) => {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onSelect}
       style={{
-        backgroundColor: isSelected ? colors.accent : colors.bg,
-        borderColor: isSelected ? colors.accent : colors.panelBorder,
+        backgroundColor: isSelected ? activeColors.accent : activeColors.bg,
+        borderColor: isSelected ? activeColors.accent : activeColors.panelBorder,
         borderWidth: 1,
         borderRadius: 16,
         paddingHorizontal: 10,
@@ -33,7 +35,7 @@ export const UnitChip: React.FC<UnitChipProps> = ({
         style={{
           fontFamily: fonts.body,
           fontSize: 12,
-          color: isSelected ? colors.paperInk : colors.inkDim,
+          color: isSelected ? activeColors.paperInk : activeColors.inkDim,
           fontWeight: isSelected ? "600" : "400",
         }}
       >

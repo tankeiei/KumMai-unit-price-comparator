@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { Trash2 } from "lucide-react-native";
-import { ComparisonItem } from "../types";
-import { colors } from "../theme/colors";
+import { ComparisonItem, LanguageMode } from "../types";
+import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
-import { UNIT_PRESETS } from "../constants/units";
+import { getTranslation } from "../constants/translations";
 import { UnitChip } from "./UnitChip";
 
 interface ItemCardProps {
@@ -13,6 +13,8 @@ interface ItemCardProps {
   totalCount: number;
   onUpdate: (field: keyof ComparisonItem, value: string) => void;
   onRemove: () => void;
+  activeColors: AppColors;
+  language: LanguageMode;
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -21,15 +23,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   totalCount,
   onUpdate,
   onRemove,
+  activeColors,
+  language,
 }) => {
+  const t = getTranslation(language);
+
   return (
     <View
       style={{
         width: "100%",
-        backgroundColor: colors.panel,
+        backgroundColor: activeColors.panel,
         borderRadius: 16,
         borderWidth: 1.5,
-        borderColor: colors.panelBorder,
+        borderColor: activeColors.panelBorder,
         padding: 16,
         marginBottom: 16,
       }}
@@ -50,7 +56,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               width: 28,
               height: 28,
               borderRadius: 14,
-              backgroundColor: colors.accent,
+              backgroundColor: activeColors.accent,
               alignItems: "center",
               justifyContent: "center",
               marginRight: 10,
@@ -61,7 +67,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 fontFamily: fonts.mono,
                 fontSize: 13,
                 fontWeight: "700",
-                color: colors.paperInk,
+                color: activeColors.paperInk,
               }}
             >
               #{index + 1}
@@ -72,13 +78,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <TextInput
             value={item.name}
             onChangeText={(text) => onUpdate("name", text)}
-            placeholder="ระบุชื่อตัวเลือก..."
-            placeholderTextColor={colors.inkDim + "80"}
+            placeholder={t.optionPlaceholder}
+            placeholderTextColor={activeColors.inkDim + "80"}
             style={{
               flex: 1,
               fontFamily: fonts.display,
               fontSize: 18,
-              color: colors.accent,
+              color: activeColors.accent,
               padding: 0,
               margin: 0,
             }}
@@ -91,13 +97,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             activeOpacity={0.7}
             style={{
               padding: 8,
-              backgroundColor: colors.bg,
+              backgroundColor: activeColors.bg,
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: colors.panelBorder,
+              borderColor: activeColors.panelBorder,
             }}
           >
-            <Trash2 size={16} color={colors.bad} />
+            <Trash2 size={16} color={activeColors.bad} />
           </TouchableOpacity>
         )}
       </View>
@@ -116,19 +122,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             style={{
               fontFamily: fonts.mono,
               fontSize: 11,
-              color: colors.inkDim,
+              color: activeColors.inkDim,
               textTransform: "lowercase",
               marginBottom: 4,
             }}
           >
-            ราคา (บาท)
+            {t.priceLabel}
           </Text>
           <View
             style={{
-              backgroundColor: colors.bg,
+              backgroundColor: activeColors.bg,
               borderRadius: 10,
               borderWidth: 1,
-              borderColor: colors.panelBorder,
+              borderColor: activeColors.panelBorder,
               flexDirection: "row",
               alignItems: "center",
               paddingHorizontal: 12,
@@ -139,7 +145,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               style={{
                 fontFamily: fonts.mono,
                 fontSize: 16,
-                color: colors.inkDim,
+                color: activeColors.inkDim,
                 marginRight: 6,
               }}
             >
@@ -149,13 +155,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               value={item.price}
               onChangeText={(text) => onUpdate("price", text)}
               placeholder="0.00"
-              placeholderTextColor={colors.inkDim + "60"}
+              placeholderTextColor={activeColors.inkDim + "60"}
               keyboardType="numeric"
               style={{
                 flex: 1,
                 fontFamily: fonts.mono,
                 fontSize: 18,
-                color: colors.ink,
+                color: activeColors.ink,
                 padding: 0,
               }}
             />
@@ -168,19 +174,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             style={{
               fontFamily: fonts.mono,
               fontSize: 11,
-              color: colors.inkDim,
+              color: activeColors.inkDim,
               textTransform: "lowercase",
               marginBottom: 4,
             }}
           >
-            ปริมาณ / จำนวน
+            {t.qtyLabel}
           </Text>
           <View
             style={{
-              backgroundColor: colors.bg,
+              backgroundColor: activeColors.bg,
               borderRadius: 10,
               borderWidth: 1,
-              borderColor: colors.panelBorder,
+              borderColor: activeColors.panelBorder,
               paddingHorizontal: 12,
               paddingVertical: 8,
             }}
@@ -189,12 +195,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               value={item.qty}
               onChangeText={(text) => onUpdate("qty", text)}
               placeholder="1"
-              placeholderTextColor={colors.inkDim + "60"}
+              placeholderTextColor={activeColors.inkDim + "60"}
               keyboardType="numeric"
               style={{
                 fontFamily: fonts.mono,
                 fontSize: 18,
-                color: colors.ink,
+                color: activeColors.ink,
                 padding: 0,
               }}
             />
@@ -208,21 +214,22 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           style={{
             fontFamily: fonts.mono,
             fontSize: 11,
-            color: colors.inkDim,
+            color: activeColors.inkDim,
             textTransform: "lowercase",
             marginBottom: 6,
           }}
         >
-          หน่วย (เช่น ชิ้น, กรัม, มล.)
+          {t.unitLabel}
         </Text>
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 6 }}>
-          {UNIT_PRESETS.map((preset) => (
+          {t.unitPresets.map((preset) => (
             <UnitChip
               key={preset}
               label={preset}
               isSelected={item.unit === preset}
               onSelect={() => onUpdate("unit", preset)}
+              activeColors={activeColors}
             />
           ))}
         </View>
@@ -230,18 +237,18 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <TextInput
           value={item.unit}
           onChangeText={(text) => onUpdate("unit", text)}
-          placeholder="หรือระบุหน่วยเอง..."
-          placeholderTextColor={colors.inkDim + "60"}
+          placeholder={t.customUnitPlaceholder}
+          placeholderTextColor={activeColors.inkDim + "60"}
           style={{
-            backgroundColor: colors.bg,
+            backgroundColor: activeColors.bg,
             borderRadius: 8,
             borderWidth: 1,
-            borderColor: colors.panelBorder,
+            borderColor: activeColors.panelBorder,
             paddingHorizontal: 10,
             paddingVertical: 6,
             fontFamily: fonts.body,
             fontSize: 14,
-            color: colors.ink,
+            color: activeColors.ink,
           }}
         />
       </View>

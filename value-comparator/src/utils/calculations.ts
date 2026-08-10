@@ -1,4 +1,5 @@
-import { ComparisonItem, ComputedItem, RankedItem } from "../types";
+import { ComparisonItem, ComputedItem, LanguageMode, RankedItem } from "../types";
+import { getTranslation } from "../constants/translations";
 
 /**
  * Computes unit price for a single item.
@@ -70,19 +71,20 @@ export function rankItems(items: ComparisonItem[]): RankedItem[] {
 /**
  * Builds human-readable savings summary comparing best and worst valid options.
  */
-export function buildSummary(rankedItems: RankedItem[]): string | null {
+export function buildSummary(rankedItems: RankedItem[], lang: LanguageMode = "th"): string | null {
   if (rankedItems.length < 2) {
     return null;
   }
 
+  const t = getTranslation(lang);
   const best = rankedItems[0];
   const worst = rankedItems[rankedItems.length - 1];
 
-  const bestName = best.name.trim() || `ตัวเลือก ${best.rank}`;
-  const worstName = worst.name.trim() || `ตัวเลือก ${worst.rank}`;
+  const bestName = best.name.trim() || t.optionRankLabel(best.rank);
+  const worstName = worst.name.trim() || t.optionRankLabel(worst.rank);
 
   const diffPct = worst.pctMoreExpensive;
   const formattedPct = diffPct % 1 === 0 ? diffPct.toFixed(0) : diffPct.toFixed(1);
 
-  return `ซื้อ ${bestName} แทน ${worstName} ประหยัด ${formattedPct}% ต่อหน่วย`;
+  return t.savingsSummary(bestName, worstName, formattedPct);
 }

@@ -1,3 +1,6 @@
+export type LanguageMode = "th" | "en";
+export type ThemeMode = "dark" | "light" | "system";
+
 export type ComparisonItem = {
   id: string;
   name: string;
@@ -15,3 +18,4 @@ export type RankedItem = ComputedItem & {
   rank: number;
   pctMoreExpensive: number; // 0 for rank 1
 };
+

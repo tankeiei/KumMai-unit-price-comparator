@@ -1,24 +1,34 @@
 import React from "react";
 import { TouchableOpacity, Text, View } from "react-native";
 import { Plus } from "lucide-react-native";
-import { colors } from "../theme/colors";
+import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
+import { getTranslation } from "../constants/translations";
+import { LanguageMode } from "../types";
 
 interface AddItemCardProps {
   onAdd: () => void;
+  activeColors: AppColors;
+  language: LanguageMode;
 }
 
-export const AddItemCard: React.FC<AddItemCardProps> = ({ onAdd }) => {
+export const AddItemCard: React.FC<AddItemCardProps> = ({
+  onAdd,
+  activeColors,
+  language,
+}) => {
+  const t = getTranslation(language);
+
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={onAdd}
       style={{
         width: "100%",
-        backgroundColor: colors.panel + "90",
+        backgroundColor: activeColors.panel + "90",
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: colors.accent + "80",
+        borderColor: activeColors.accent + "80",
         borderStyle: "dashed",
         paddingVertical: 16,
         paddingHorizontal: 20,
@@ -34,21 +44,21 @@ export const AddItemCard: React.FC<AddItemCardProps> = ({ onAdd }) => {
           width: 28,
           height: 28,
           borderRadius: 14,
-          backgroundColor: colors.accent,
+          backgroundColor: activeColors.accent,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Plus size={18} color={colors.paperInk} strokeWidth={2.5} />
+        <Plus size={18} color={activeColors.paperInk} strokeWidth={2.5} />
       </View>
       <Text
         style={{
           fontFamily: fonts.display,
           fontSize: 16,
-          color: colors.accent,
+          color: activeColors.accent,
         }}
       >
-        เพิ่มตัวเลือกเทียบราคา
+        {t.addOption}
       </Text>
     </TouchableOpacity>
   );

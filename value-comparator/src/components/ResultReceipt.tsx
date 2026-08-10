@@ -1,18 +1,24 @@
 import React from "react";
 import { View, Text } from "react-native";
 import { Receipt, Sparkles, Info } from "lucide-react-native";
-import { RankedItem } from "../types";
+import { LanguageMode, RankedItem } from "../types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { buildSummary } from "../utils/calculations";
+import { getTranslation } from "../constants/translations";
 import { ResultRow } from "./ResultRow";
 
 interface ResultReceiptProps {
   rankedItems: RankedItem[];
+  language: LanguageMode;
 }
 
-export const ResultReceipt: React.FC<ResultReceiptProps> = ({ rankedItems }) => {
-  const summaryText = buildSummary(rankedItems);
+export const ResultReceipt: React.FC<ResultReceiptProps> = ({
+  rankedItems,
+  language,
+}) => {
+  const t = getTranslation(language);
+  const summaryText = buildSummary(rankedItems, language);
   const hasResults = rankedItems.length > 0;
 
   return (
@@ -49,7 +55,7 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({ rankedItems }) => 
                 letterSpacing: 0.5,
               }}
             >
-              ใบสรุปความคุ้มค่า
+              {t.receiptTitle}
             </Text>
           </View>
           <Text
@@ -72,6 +78,7 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({ rankedItems }) => 
                 key={item.id}
                 item={item}
                 isBest={item.rank === 1}
+                language={language}
               />
             ))}
 
@@ -122,7 +129,7 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({ rankedItems }) => 
                 textAlign: "center",
               }}
             >
-              กรอกราคาและจำนวนอย่างน้อย 1 ตัวเลือก{"\n"}เพื่อดูการเปรียบเทียบราคาต่อหน่วย
+              {t.emptyState}
             </Text>
           </View>
         )}
@@ -147,7 +154,7 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({ rankedItems }) => 
               color: colors.paperInk + "70",
             }}
           >
-            คำนวณโดยระบบเปรียบเทียบ "คุ้มไหม?"
+            {t.receiptFooter}
           </Text>
         </View>
       </View>

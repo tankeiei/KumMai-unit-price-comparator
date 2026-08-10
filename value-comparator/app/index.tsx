@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,26 +7,44 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  useColorScheme,
 } from "react-native";
-import { RotateCcw, Scale } from "lucide-react-native";
+import { RotateCcw, Scale, Settings } from "lucide-react-native";
 import { useComparatorStore } from "../src/store/comparatorStore";
 import { rankItems } from "../src/utils/calculations";
-import { colors } from "../src/theme/colors";
+import { getAppColors } from "../src/theme/colors";
 import { fonts } from "../src/theme/typography";
+import { getTranslation } from "../src/constants/translations";
 import { ItemCard } from "../src/components/ItemCard";
 import { AddItemCard } from "../src/components/AddItemCard";
 import { BestValueCallout } from "../src/components/BestValueCallout";
 import { ResultReceipt } from "../src/components/ResultReceipt";
+import { SettingsModal } from "../src/components/SettingsModal";
 
 export default function ComparatorScreen() {
-  const { items, addItem, updateItem, removeItem, resetItems } =
-    useComparatorStore();
+  const systemColorScheme = useColorScheme();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  const {
+    items,
+    language,
+    theme,
+    addItem,
+    updateItem,
+    removeItem,
+    resetItems,
+    setLanguage,
+    setTheme,
+  } = useComparatorStore();
+
+  const activeColors = getAppColors(theme, systemColorScheme);
+  const t = getTranslation(language);
 
   const rankedItems = rankItems(items);
   const bestItem = rankedItems.length > 0 ? rankedItems[0] : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: activeColors.bg }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
@@ -49,60 +67,80 @@ export default function ComparatorScreen() {
               alignItems: "flex-start",
             }}
           >
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, marginRight: 12 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Scale size={28} color={colors.accent} />
+                <Scale size={28} color={activeColors.accent} />
                 <Text
                   style={{
                     fontFamily: fonts.display,
                     fontSize: 28,
-                    color: colors.ink,
+                    color: activeColors.ink,
                     letterSpacing: 0.5,
                   }}
                 >
-                  คุ้มไหม?
+                  {t.appTitle}
                 </Text>
               </View>
               <Text
                 style={{
                   fontFamily: fonts.body,
                   fontSize: 14,
-                  color: colors.inkDim,
+                  color: activeColors.inkDim,
                   marginTop: 4,
                 }}
               >
-                เปรียบเทียบราคาต่อหน่วย คุ้มสุดจัดอันดับให้ทันที
+                {t.appSubtitle}
               </Text>
             </View>
 
-            {/* Reset Button */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={resetItems}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-                backgroundColor: colors.panel,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: colors.panelBorder,
-                marginTop: 4,
-              }}
-            >
-              <RotateCcw size={14} color={colors.inkDim} />
-              <Text
+            {/* Header Action Buttons (Settings & Reset) */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+              {/* Settings Button */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setIsSettingsOpen(true)}
                 style={{
-                  fontFamily: fonts.body,
-                  fontSize: 12,
-                  color: colors.inkDim,
+                  width: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: activeColors.panel,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  borderColor: activeColors.panelBorder,
                 }}
               >
-                ล้างข้อมูล
-              </Text>
-            </TouchableOpacity>
+                <Settings size={16} color={activeColors.inkDim} />
+              </TouchableOpacity>
+
+              {/* Reset Button */}
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={resetItems}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  backgroundColor: activeColors.panel,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: activeColors.panelBorder,
+                }}
+              >
+                <RotateCcw size={14} color={activeColors.inkDim} />
+                <Text
+                  style={{
+                    fontFamily: fonts.body,
+                    fontSize: 12,
+                    color: activeColors.inkDim,
+                  }}
+                >
+                  {t.clearData}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Item Input Cards List */}
@@ -115,24 +153,43 @@ export default function ComparatorScreen() {
                 totalCount={items.length}
                 onUpdate={(field, value) => updateItem(item.id, field, value)}
                 onRemove={() => removeItem(item.id)}
+                activeColors={activeColors}
+                language={language}
               />
             ))}
           </View>
 
           {/* Add Item Button */}
-          <AddItemCard onAdd={addItem} />
+          <AddItemCard
+            onAdd={addItem}
+            activeColors={activeColors}
+            language={language}
+          />
 
           {/* 2-Tier Results Section */}
           {bestItem && (
             <BestValueCallout
               bestItem={bestItem}
               totalCompared={rankedItems.length}
+              activeColors={activeColors}
+              language={language}
             />
           )}
 
-          <ResultReceipt rankedItems={rankedItems} />
+          <ResultReceipt rankedItems={rankedItems} language={language} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        visible={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        language={language}
+        theme={theme}
+        onSelectLanguage={setLanguage}
+        onSelectTheme={setTheme}
+        systemColorScheme={systemColorScheme}
+      />
     </SafeAreaView>
   );
 }

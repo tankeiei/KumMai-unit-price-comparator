@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { Receipt, Sparkles, Info } from "lucide-react-native";
+import React, { useState } from "react";
+import { View, Text, TouchableOpacity, Share } from "react-native";
+import { Receipt, Sparkles, Info, Share2 } from "lucide-react-native";
 import { LanguageMode, RankedItem } from "../types";
 import { colors } from "../theme/colors";
 import { fonts } from "../theme/typography";
@@ -21,6 +21,49 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
   const summaryText = buildSummary(rankedItems, language);
   const hasResults = rankedItems.length > 0;
 
+  const handleShare = async () => {
+    if (rankedItems.length === 0) return;
+
+    const lines: string[] = [
+      t.copyHeader,
+      "================================",
+    ];
+
+    rankedItems.forEach((it) => {
+      const targetPrice = it.displayUnitPrice ?? it.unitPrice;
+      const priceStr =
+        targetPrice !== null && targetPrice !== undefined
+          ? targetPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 3,
+            })
+          : "-";
+      const unitStr = it.displayUnit || it.unit || t.defaultUnit;
+      const rankIcon = it.rank === 1 ? "🥇" : it.rank === 2 ? "🥈" : it.rank === 3 ? "🥉" : "•";
+      const promoStr = it.discountSummary ? ` [${it.discountSummary}]` : "";
+      const diffStr = it.rank > 1 ? ` (+${it.pctMoreExpensive.toFixed(1)}%)` : "";
+
+      lines.push(
+        `${rankIcon} #${it.rank} ${it.name}${promoStr}: ฿${priceStr} / ${unitStr}${diffStr}`
+      );
+    });
+
+    if (summaryText) {
+      lines.push("--------------------------------");
+      lines.push(`💡 ${summaryText}`);
+    }
+    lines.push("================================");
+    lines.push(t.receiptFooter);
+
+    try {
+      await Share.share({
+        message: lines.join("\n"),
+      });
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <View style={{ marginBottom: 40 }}>
       {/* Receipt Card Container */}
@@ -37,15 +80,15 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
         }}
       >
         {/* Receipt Top Header Barcode / Title */}
-        <View style={{ alignItems: "center", marginBottom: 16 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 4,
-            }}
-          >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Receipt size={20} color={colors.paperInk} />
             <Text
               style={{
@@ -58,6 +101,37 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
               {t.receiptTitle}
             </Text>
           </View>
+
+          {/* Share Button */}
+          {hasResults && (
+            <TouchableOpacity
+              onPress={handleShare}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                backgroundColor: colors.paperInk + "12",
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                borderRadius: 14,
+              }}
+            >
+              <Share2 size={13} color={colors.paperInk} />
+              <Text
+                style={{
+                  fontFamily: fonts.display,
+                  fontSize: 12,
+                  color: colors.paperInk,
+                }}
+              >
+                {t.shareReceipt}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={{ alignItems: "center", marginBottom: 12 }}>
           <Text
             style={{
               fontFamily: fonts.mono,

@@ -26,10 +26,15 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
         })
       : "-";
 
-  const formattedPct =
-    item.pctMoreExpensive % 1 === 0
-      ? item.pctMoreExpensive.toFixed(0)
-      : item.pctMoreExpensive.toFixed(1);
+  let formattedPct = "";
+  if (item.pctMoreExpensive > 0 && item.pctMoreExpensive < 0.1) {
+    formattedPct = "<0.1";
+  } else {
+    formattedPct =
+      item.pctMoreExpensive % 1 === 0
+        ? item.pctMoreExpensive.toFixed(0)
+        : item.pctMoreExpensive.toFixed(1);
+  }
 
   const packCountNum = parseFloat(item.packCount || "1");
   const packTagStr =
@@ -37,7 +42,9 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
       ? ` (${t.packTag(item.packCount || "1")})`
       : "";
 
-  const displayName = `${item.name || t.optionRankLabel(item.rank)}${packTagStr}`;
+  const promoTagStr = item.discountSummary ? ` [${item.discountSummary}]` : "";
+
+  const displayName = `${item.name || t.optionRankLabel(item.rank)}${packTagStr}${promoTagStr}`;
 
   return (
     <View

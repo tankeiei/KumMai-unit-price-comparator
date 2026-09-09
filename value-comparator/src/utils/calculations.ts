@@ -3,15 +3,24 @@ import { getTranslation } from "../constants/translations";
 import { findUnitDefinition } from "../constants/units";
 
 /**
- * Computes unit price and normalized base unit price for a single item.
+ * Safely parses string inputs to numbers, stripping commas and whitespace.
+ */
+export function parseCleanFloat(str?: string | null): number {
+  if (!str) return NaN;
+  const cleaned = str.toString().replace(/,/g, "").trim();
+  return parseFloat(cleaned);
+}
+
+/**
+ * Computes unit price, promo adjustments, and normalized base unit price for a single item.
  */
 export function computeUnitPrice(item: ComparisonItem): ComputedItem {
-  const priceNum = parseFloat(item.price);
-  const qtyNum = parseFloat(item.qty);
+  const priceNum = parseCleanFloat(item.price);
+  const qtyNum = parseCleanFloat(item.qty);
 
   let packCountNum = 1;
   if (item.isPack) {
-    const parsedPack = parseFloat(item.packCount || "1");
+    const parsedPack = parseCleanFloat(item.packCount || "1");
     if (!isNaN(parsedPack) && parsedPack > 0 && isFinite(parsedPack)) {
       packCountNum = parsedPack;
     }
@@ -21,7 +30,42 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
   const multiplier = unitDef ? unitDef.multiplierToBase : 1;
   const baseUnitId = unitDef ? unitDef.baseUnitId : item.unit.trim().toLowerCase() || "unit";
 
-  const effectiveQty = qtyNum * packCountNum * multiplier;
+  let effectivePrice = priceNum;
+  let promoMultiplierQty = 1;
+  let discountSummary: string | null = null;
+
+  if (item.discountType && item.discountType !== "none") {
+    switch (item.discountType) {
+      case "bogo":
+        // Buy 1 Get 1: Effective quantity is doubled for the same price
+        promoMultiplierQty = 2;
+        discountSummary = "1 แถม 1";
+        break;
+      case "second_half":
+        // 2nd item 50% off: equivalent to 25% discount per unit
+        effectivePrice = priceNum * 0.75;
+        discountSummary = "ชิ้นที่ 2 ลด 50%";
+        break;
+      case "fixed": {
+        const discountVal = parseCleanFloat(item.discountValue || "0");
+        if (!isNaN(discountVal) && discountVal > 0) {
+          effectivePrice = Math.max(0.01, priceNum - discountVal);
+          discountSummary = `ลด ฿${discountVal}`;
+        }
+        break;
+      }
+      case "percent": {
+        const pctVal = parseCleanFloat(item.discountValue || "0");
+        if (!isNaN(pctVal) && pctVal > 0 && pctVal <= 100) {
+          effectivePrice = Math.max(0.01, priceNum * (1 - pctVal / 100));
+          discountSummary = `ลด ${pctVal}%`;
+        }
+        break;
+      }
+    }
+  }
+
+  const effectiveQty = qtyNum * packCountNum * promoMultiplierQty * multiplier;
 
   const isValid =
     !isNaN(priceNum) &&
@@ -37,20 +81,58 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
       ...item,
       unitPrice: null,
       effectiveQty: null,
+      effectivePrice: null,
       valid: false,
+      discountSummary: null,
     };
   }
 
-  const rawUnitPrice = priceNum / (qtyNum * packCountNum);
-  const baseUnitPrice = priceNum / effectiveQty;
+  const rawUnitPrice = effectivePrice / (qtyNum * packCountNum * promoMultiplierQty);
+  const baseUnitPrice = effectivePrice / effectiveQty;
 
   return {
     ...item,
     unitPrice: rawUnitPrice,
     effectiveQty,
+    effectivePrice,
     valid: true,
     baseUnitId,
     baseUnitPrice,
+    discountSummary,
+  };
+}
+
+/**
+ * Checks if the valid items in the comparison have compatible unit categories.
+ */
+export function checkUnitsCompatibility(items: ComparisonItem[]): {
+  isCompatible: boolean;
+  categories: string[];
+} {
+  const validItems = items.filter((it) => {
+    const p = parseCleanFloat(it.price);
+    const q = parseCleanFloat(it.qty);
+    return !isNaN(p) && !isNaN(q) && p > 0 && q > 0;
+  });
+
+  if (validItems.length < 2) {
+    return { isCompatible: true, categories: [] };
+  }
+
+  const catSet = new Set<string>();
+  for (const it of validItems) {
+    const def = findUnitDefinition(it.unit);
+    if (def) {
+      catSet.add(def.category);
+    }
+  }
+
+  // If there are multiple different standard categories (e.g. liquid AND weight), flag as incompatible
+  const isCompatible = catSet.size <= 1;
+
+  return {
+    isCompatible,
+    categories: Array.from(catSet),
   };
 }
 
@@ -92,7 +174,6 @@ export function rankItems(items: ComparisonItem[], lang: LanguageMode = "th"): R
     // If all items are in the same category and converted (e.g. g vs kg, ml vs L)
     if (allSameCategory && primaryBaseUnitId) {
       if (primaryBaseUnitId === "g") {
-        // If price per gram is small, display as per kg for cleaner numbers if any item was in kg or large volume
         const hasKg = sorted.some((it) => {
           const def = findUnitDefinition(it.unit);
           return def?.id === "kg";
@@ -145,17 +226,43 @@ export function buildSummary(rankedItems: RankedItem[], lang: LanguageMode = "th
   const worst = rankedItems[rankedItems.length - 1];
 
   let bestName = best.name.trim() || t.optionRankLabel(best.rank);
-  if (best.isPack && best.packCount && parseFloat(best.packCount) > 1) {
+  if (best.isPack && best.packCount && parseCleanFloat(best.packCount) > 1) {
     bestName += ` (${t.packTag(best.packCount)})`;
+  }
+  if (best.discountSummary) {
+    bestName += ` [${best.discountSummary}]`;
   }
 
   let worstName = worst.name.trim() || t.optionRankLabel(worst.rank);
-  if (worst.isPack && worst.packCount && parseFloat(worst.packCount) > 1) {
+  if (worst.isPack && worst.packCount && parseCleanFloat(worst.packCount) > 1) {
     worstName += ` (${t.packTag(worst.packCount)})`;
+  }
+  if (worst.discountSummary) {
+    worstName += ` [${worst.discountSummary}]`;
   }
 
   const diffPct = worst.pctMoreExpensive;
-  const formattedPct = diffPct % 1 === 0 ? diffPct.toFixed(0) : diffPct.toFixed(1);
+
+  // Handle tie scenario
+  if (diffPct === 0) {
+    const targetPrice = best.displayUnitPrice ?? best.unitPrice;
+    const targetUnit = best.displayUnit || best.unit || t.defaultUnit;
+    const formattedPrice =
+      targetPrice !== null && targetPrice !== undefined
+        ? targetPrice.toLocaleString(lang === "en" ? "en-US" : "th-TH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 3,
+          })
+        : "-";
+    return t.tieSummary(`${bestName}, ${worstName}`, formattedPrice, targetUnit);
+  }
+
+  let formattedPct = "";
+  if (diffPct > 0 && diffPct < 0.1) {
+    formattedPct = "< 0.1";
+  } else {
+    formattedPct = diffPct % 1 === 0 ? diffPct.toFixed(0) : diffPct.toFixed(1);
+  }
 
   return t.savingsSummary(bestName, worstName, formattedPct);
 }

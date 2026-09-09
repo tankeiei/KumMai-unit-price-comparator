@@ -38,7 +38,9 @@ export const BestValueCallout: React.FC<BestValueCalloutProps> = ({
       ? ` (${t.packTag(bestItem.packCount || "1")})`
       : "";
 
-  const itemName = `${bestItem.name.trim() || t.optionRankLabel(bestItem.rank)}${packTagStr}`;
+  const promoTagStr = bestItem.discountSummary ? ` [${bestItem.discountSummary}]` : "";
+
+  const itemName = `${bestItem.name.trim() || t.optionRankLabel(bestItem.rank)}${packTagStr}${promoTagStr}`;
 
   return (
     <View

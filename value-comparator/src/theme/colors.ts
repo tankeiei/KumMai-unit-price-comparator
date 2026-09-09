@@ -1,37 +1,56 @@
 import { ColorSchemeName } from "react-native";
 import { ThemeMode } from "../types";
 
-export const darkColors = {
-  bg: "#0D1117",
-  panel: "#161B22",
-  panelBorder: "#30363D",
-  ink: "#F0F6FC",
-  inkDim: "#8B949E",
-  accent: "#F0B90B",
-  good: "#3FB950",
-  goodBg: "#11271D",
-  bad: "#F85149",
-  badBg: "#2B1A1D",
-  paper: "#FAF4E6",
-  paperInk: "#1C2128",
-} as const;
+export interface AppColors {
+  bg: string;
+  panel: string;
+  panelBorder: string;
+  ink: string;
+  inkDim: string;
+  accent: string;
+  good: string;
+  goodBg: string;
+  bad: string;
+  badBg: string;
+  paper: string;
+  paperInk: string;
+  warning: string;
+  warningBg: string;
+}
 
-export const lightColors = {
-  bg: "#F6F8FA",
+export const darkColors: AppColors = {
+  bg: "#132219",
+  panel: "#1D3226",
+  panelBorder: "#2D4B39",
+  ink: "#F3EFE3",
+  inkDim: "#9FB0A0",
+  accent: "#E8B23D",
+  good: "#7FD9A8",
+  goodBg: "#173B28",
+  bad: "#E8735A",
+  badBg: "#3D201A",
+  paper: "#F4EFE0",
+  paperInk: "#22331F",
+  warning: "#F59E0B",
+  warningBg: "#382914",
+};
+
+export const lightColors: AppColors = {
+  bg: "#F4F7F4",
   panel: "#FFFFFF",
-  panelBorder: "#D0D7DE",
-  ink: "#1F2328",
-  inkDim: "#6E7681",
-  accent: "#D97706",
-  good: "#1F883D",
-  goodBg: "#DAFBE1",
-  bad: "#CF222E",
-  badBg: "#FFEBE9",
-  paper: "#FAF4E6",
-  paperInk: "#1C2128",
-} as const;
-
-export type AppColors = typeof darkColors;
+  panelBorder: "#D5E0D7",
+  ink: "#1D3226",
+  inkDim: "#5C7564",
+  accent: "#C68A1B",
+  good: "#1F884D",
+  goodBg: "#E3F7EB",
+  bad: "#CF3A27",
+  badBg: "#FDEAE8",
+  paper: "#FAF5E8",
+  paperInk: "#22331F",
+  warning: "#D97706",
+  warningBg: "#FEF3C7",
+};
 
 export const colors = darkColors; // Default backward-compatible export
 

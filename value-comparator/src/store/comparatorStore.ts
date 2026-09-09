@@ -9,12 +9,22 @@ interface ComparatorState {
   language: LanguageMode;
   theme: ThemeMode;
   addItem: () => void;
+  duplicateItem: (id: string) => void;
   updateItem: (id: string, field: keyof ComparisonItem, value: any) => void;
   removeItem: (id: string) => void;
   resetItems: () => void;
   setLanguage: (language: LanguageMode) => void;
   setTheme: (theme: ThemeMode) => void;
 }
+
+const getIndexLetter = (index: number): string => {
+  if (index < 26) {
+    return String.fromCharCode(65 + index);
+  }
+  const first = String.fromCharCode(65 + Math.floor(index / 26) - 1);
+  const second = String.fromCharCode(65 + (index % 26));
+  return `${first}${second}`;
+};
 
 const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
   const t = translations[lang] || translations.th;
@@ -27,6 +37,8 @@ const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
       unit: t.unitPresets[0] || "ชิ้น",
       isPack: false,
       packCount: "1",
+      discountType: "none",
+      discountValue: "",
     },
     {
       id: "2",
@@ -36,6 +48,8 @@ const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
       unit: t.unitPresets[0] || "ชิ้น",
       isPack: false,
       packCount: "1",
+      discountType: "none",
+      discountValue: "",
     },
   ];
 };
@@ -50,7 +64,7 @@ export const useComparatorStore = create<ComparatorState>()(
       addItem: () =>
         set((state) => {
           const t = translations[state.language] || translations.th;
-          const nextLetter = String.fromCharCode(65 + state.items.length);
+          const nextLetter = getIndexLetter(state.items.length);
           const newItem: ComparisonItem = {
             id: Date.now().toString(),
             name: `${t.optionPrefix} ${nextLetter}`,
@@ -59,8 +73,33 @@ export const useComparatorStore = create<ComparatorState>()(
             unit: state.items[state.items.length - 1]?.unit || t.unitPresets[0],
             isPack: false,
             packCount: "1",
+            discountType: "none",
+            discountValue: "",
           };
           return { items: [...state.items, newItem] };
+        }),
+
+      duplicateItem: (id) =>
+        set((state) => {
+          const targetIndex = state.items.findIndex((item) => item.id === id);
+          if (targetIndex === -1) return state;
+
+          const target = state.items[targetIndex];
+          const t = translations[state.language] || translations.th;
+          const copySuffix = state.language === "en" ? "(Copy)" : "(คัดลอก)";
+          const nextLetter = getIndexLetter(state.items.length);
+
+          const duplicatedItem: ComparisonItem = {
+            ...target,
+            id: `${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+            name: target.name.trim()
+              ? `${target.name.trim()} ${copySuffix}`
+              : `${t.optionPrefix} ${nextLetter}`,
+          };
+
+          const newItems = [...state.items];
+          newItems.splice(targetIndex + 1, 0, duplicatedItem);
+          return { items: newItems };
         }),
 
       updateItem: (id, field, value) =>
@@ -77,10 +116,10 @@ export const useComparatorStore = create<ComparatorState>()(
           const t = translations[state.language] || translations.th;
 
           const reordered = remaining.map((item, index) => {
-            const letter = String.fromCharCode(65 + index);
+            const letter = getIndexLetter(index);
             const trimmed = item.name.trim();
-            const isDefaultTH = /^ตัวเลือก\s+[A-Z]$/i.test(trimmed);
-            const isDefaultEN = /^Option\s+[A-Z]$/i.test(trimmed);
+            const isDefaultTH = /^ตัวเลือก\s+[A-Z0-9]+$/i.test(trimmed);
+            const isDefaultEN = /^Option\s+[A-Z0-9]+$/i.test(trimmed);
 
             if (isDefaultTH || isDefaultEN || !trimmed) {
               return {

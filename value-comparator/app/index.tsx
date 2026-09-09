@@ -9,9 +9,9 @@ import {
   Platform,
   useColorScheme,
 } from "react-native";
-import { RotateCcw, Scale, Settings } from "lucide-react-native";
+import { RotateCcw, Scale, Settings, AlertTriangle } from "lucide-react-native";
 import { useComparatorStore } from "../src/store/comparatorStore";
-import { rankItems } from "../src/utils/calculations";
+import { rankItems, checkUnitsCompatibility } from "../src/utils/calculations";
 import { getAppColors } from "../src/theme/colors";
 import { fonts } from "../src/theme/typography";
 import { getTranslation } from "../src/constants/translations";
@@ -30,6 +30,7 @@ export default function ComparatorScreen() {
     language,
     theme,
     addItem,
+    duplicateItem,
     updateItem,
     removeItem,
     resetItems,
@@ -40,8 +41,9 @@ export default function ComparatorScreen() {
   const activeColors = getAppColors(theme, systemColorScheme);
   const t = getTranslation(language);
 
-  const rankedItems = rankItems(items);
+  const rankedItems = rankItems(items, language);
   const bestItem = rankedItems.length > 0 ? rankedItems[0] : null;
+  const { isCompatible } = checkUnitsCompatibility(items);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: activeColors.bg }}>
@@ -143,6 +145,37 @@ export default function ComparatorScreen() {
             </View>
           </View>
 
+          {/* Incompatible Unit Category Warning Banner */}
+          {!isCompatible && (
+            <View
+              style={{
+                marginBottom: 16,
+                backgroundColor: activeColors.warningBg,
+                borderColor: activeColors.warning,
+                borderWidth: 1,
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <AlertTriangle size={18} color={activeColors.warning} />
+              <Text
+                style={{
+                  flex: 1,
+                  fontFamily: fonts.body,
+                  fontSize: 13,
+                  color: activeColors.warning,
+                  lineHeight: 18,
+                }}
+              >
+                {t.incompatibleUnitsWarning}
+              </Text>
+            </View>
+          )}
+
           {/* Item Input Cards List */}
           <View style={{ marginBottom: 8 }}>
             {items.map((item, index) => (
@@ -152,6 +185,7 @@ export default function ComparatorScreen() {
                 index={index}
                 totalCount={items.length}
                 onUpdate={(field, value) => updateItem(item.id, field, value)}
+                onDuplicate={() => duplicateItem(item.id)}
                 onRemove={() => removeItem(item.id)}
                 activeColors={activeColors}
                 language={language}

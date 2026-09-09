@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
-import { Trash2, Package, Trophy } from "lucide-react-native";
-import { ComparisonItem, LanguageMode } from "../types";
+import { Trash2, Package, Trophy, Copy, Tag } from "lucide-react-native";
+import { ComparisonItem, DiscountType, LanguageMode } from "../types";
 import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { getTranslation } from "../constants/translations";
 import { UNIT_PRESETS, UnitCategory } from "../constants/units";
+import { computeUnitPrice } from "../utils/calculations";
 import { UnitChip } from "./UnitChip";
 import { CategoryTab } from "./CategoryTab";
 
@@ -14,6 +15,7 @@ interface ItemCardProps {
   index: number;
   totalCount: number;
   onUpdate: (field: keyof ComparisonItem, value: any) => void;
+  onDuplicate: () => void;
   onRemove: () => void;
   activeColors: AppColors;
   language: LanguageMode;
@@ -25,6 +27,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   index,
   totalCount,
   onUpdate,
+  onDuplicate,
   onRemove,
   activeColors,
   language,
@@ -32,25 +35,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 }) => {
   const t = getTranslation(language);
   const [activeCategory, setActiveCategory] = useState<UnitCategory>("all");
+  const [isPromoExpanded, setIsPromoExpanded] = useState<boolean>(
+    !!(item.discountType && item.discountType !== "none")
+  );
 
-  const priceNum = parseFloat(item.price);
-  const qtyNum = parseFloat(item.qty);
   const isPackActive = !!item.isPack;
-  const packCountNum = parseFloat(item.packCount || "1");
+  const computed = computeUnitPrice(item);
 
-  const isCalculationValid =
-    !isNaN(priceNum) &&
-    !isNaN(qtyNum) &&
-    priceNum > 0 &&
-    qtyNum > 0 &&
-    isPackActive &&
-    !isNaN(packCountNum) &&
-    packCountNum > 0;
-
-  const unitPriceVal = isCalculationValid ? priceNum / (qtyNum * packCountNum) : null;
   const formattedUnitPrice =
-    unitPriceVal !== null
-      ? unitPriceVal.toLocaleString(language === "en" ? "en-US" : "th-TH", {
+    computed.valid && computed.unitPrice !== null
+      ? computed.unitPrice.toLocaleString(language === "en" ? "en-US" : "th-TH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 3,
         })
@@ -64,16 +58,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
   const handleSelectCategory = (cat: UnitCategory) => {
     setActiveCategory(cat);
-    if (cat !== "all") {
-      const presetsInCat = UNIT_PRESETS.filter((p) => p.category === cat);
-      const isCurrentUnitInCat = presetsInCat.some(
-        (p) => p.labelTh === item.unit || p.labelEn === item.unit
-      );
-      if (!isCurrentUnitInCat && presetsInCat.length > 0) {
-        const firstPresetLabel =
-          language === "en" ? presetsInCat[0].labelEn : presetsInCat[0].labelTh;
-        onUpdate("unit", firstPresetLabel);
-      }
+  };
+
+  const handleSelectDiscount = (type: DiscountType) => {
+    onUpdate("discountType", type);
+    if (type === "none") {
+      onUpdate("discountValue", "");
     }
   };
 
@@ -94,7 +84,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         elevation: isBest ? 6 : 2,
       }}
     >
-      {/* Header Row: Circular Number Badge, Name Input, Best Value Highlight Badge & Delete Button */}
+      {/* Header Row: Circular Number Badge, Name Input, Best Value Highlight Badge, Duplicate & Delete Buttons */}
       <View
         style={{
           flexDirection: "row",
@@ -145,48 +135,66 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           />
         </View>
 
-        {/* Best Value Highlight Badge */}
-        {isBest && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              backgroundColor: activeColors.good,
-              paddingHorizontal: 10,
-              paddingVertical: 5,
-              borderRadius: 14,
-              marginRight: 8,
-            }}
-          >
-            <Trophy size={14} color={activeColors.paperInk} />
-            <Text
+        {/* Action Badges & Buttons */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {/* Best Value Highlight Badge */}
+          {isBest && (
+            <View
               style={{
-                fontFamily: fonts.display,
-                fontSize: 12,
-                color: activeColors.paperInk,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+                backgroundColor: activeColors.good,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 12,
               }}
             >
-              {t.bestValueHighlight}
-            </Text>
-          </View>
-        )}
+              <Trophy size={13} color={activeColors.paperInk} />
+              <Text
+                style={{
+                  fontFamily: fonts.display,
+                  fontSize: 11,
+                  color: activeColors.paperInk,
+                }}
+              >
+                {t.bestValueHighlight}
+              </Text>
+            </View>
+          )}
 
-        {totalCount > 2 && (
+          {/* Duplicate Item Button */}
           <TouchableOpacity
-            onPress={onRemove}
+            onPress={onDuplicate}
             activeOpacity={0.7}
             style={{
-              padding: 8,
+              padding: 7,
               backgroundColor: activeColors.bg,
-              borderRadius: 20,
+              borderRadius: 18,
               borderWidth: 1,
               borderColor: activeColors.panelBorder,
             }}
           >
-            <Trash2 size={16} color={activeColors.bad} />
+            <Copy size={15} color={activeColors.accent} />
           </TouchableOpacity>
-        )}
+
+          {/* Remove Item Button */}
+          {totalCount > 2 && (
+            <TouchableOpacity
+              onPress={onRemove}
+              activeOpacity={0.7}
+              style={{
+                padding: 7,
+                backgroundColor: activeColors.bg,
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: activeColors.panelBorder,
+              }}
+            >
+              <Trash2 size={15} color={activeColors.bad} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* 2-Column Grid Inputs: Price & Quantity / Pack Quantity */}
@@ -194,7 +202,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         style={{
           flexDirection: "row",
           gap: 12,
-          marginBottom: 14,
+          marginBottom: 10,
         }}
       >
         {/* Price Input Column */}
@@ -237,7 +245,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               onChangeText={(text) => onUpdate("price", text)}
               placeholder="0.00"
               placeholderTextColor={activeColors.inkDim + "60"}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               style={{
                 flex: 1,
                 fontFamily: fonts.mono,
@@ -278,7 +286,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               onChangeText={(text) => onUpdate("qty", text)}
               placeholder="1"
               placeholderTextColor={activeColors.inkDim + "60"}
-              keyboardType="numeric"
+              keyboardType="decimal-pad"
               style={{
                 fontFamily: fonts.mono,
                 fontSize: 18,
@@ -289,6 +297,68 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </View>
         </View>
       </View>
+
+      {/* Live Unit Price Indicator Bar */}
+      {computed.valid && computed.unitPrice !== null && (
+        <View
+          style={{
+            marginBottom: 12,
+            backgroundColor: activeColors.bg,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: activeColors.accent + "50",
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text
+              style={{
+                fontFamily: fonts.body,
+                fontSize: 12,
+                color: activeColors.inkDim,
+              }}
+            >
+              {t.liveUnitPriceLabel}:
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.mono,
+                fontSize: 14,
+                fontWeight: "700",
+                color: activeColors.accent,
+              }}
+            >
+              ฿{formattedUnitPrice} / {item.unit || t.defaultUnit}
+            </Text>
+          </View>
+
+          {computed.discountSummary && (
+            <View
+              style={{
+                backgroundColor: activeColors.accent,
+                borderRadius: 6,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.display,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  color: activeColors.paperInk,
+                }}
+              >
+                {computed.discountSummary}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Unit Selection Row with Category Tabs & Icon Chips */}
       <View style={{ marginBottom: 14 }}>
@@ -316,7 +386,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 6 }}>
           {filteredPresets.map((preset) => {
             const chipLabel = language === "en" ? preset.labelEn : preset.labelTh;
-            const isSelected = item.unit === chipLabel || item.unit === preset.labelTh || item.unit === preset.labelEn;
+            const isSelected =
+              item.unit === chipLabel ||
+              item.unit === preset.labelTh ||
+              item.unit === preset.labelEn;
             return (
               <UnitChip
                 key={preset.id}
@@ -350,116 +423,272 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         />
       </View>
 
-      {/* Pack Mode Toggle Header & Section */}
+      {/* Feature Toggles Section: Pack Mode & Promo Mode */}
       <View
         style={{
           borderTopWidth: 1,
           borderTopColor: activeColors.panelBorder + "80",
-          paddingTop: 12,
+          paddingTop: 10,
+          gap: 10,
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Package size={16} color={activeColors.accent} />
-            <Text
-              style={{
-                fontFamily: fonts.display,
-                fontSize: 14,
-                color: activeColors.ink,
-              }}
-            >
-              {t.packModeToggle}
-            </Text>
-          </View>
-
-          <Switch
-            value={isPackActive}
-            onValueChange={(val) => onUpdate("isPack", val)}
-            trackColor={{
-              false: activeColors.bg,
-              true: activeColors.accent + "80",
-            }}
-            thumbColor={isPackActive ? activeColors.accent : activeColors.inkDim}
-          />
-        </View>
-
-        {/* Expanded Pack Details */}
-        {isPackActive && (
+        {/* Pack Mode Toggle */}
+        <View>
           <View
             style={{
-              marginTop: 10,
-              backgroundColor: activeColors.bg,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: activeColors.panelBorder,
-              padding: 12,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Package size={15} color={activeColors.accent} />
               <Text
                 style={{
-                  fontFamily: fonts.body,
+                  fontFamily: fonts.display,
                   fontSize: 13,
-                  color: activeColors.inkDim,
-                  flex: 1,
+                  color: activeColors.ink,
                 }}
               >
-                {t.packCountLabel}:
+                {t.packModeToggle}
               </Text>
-
-              <View
-                style={{
-                  width: 80,
-                  backgroundColor: activeColors.panel,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: activeColors.panelBorder,
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                }}
-              >
-                <TextInput
-                  value={item.packCount ?? "1"}
-                  onChangeText={(text) => onUpdate("packCount", text)}
-                  placeholder={t.packCountPlaceholder}
-                  placeholderTextColor={activeColors.inkDim + "60"}
-                  keyboardType="numeric"
-                  style={{
-                    fontFamily: fonts.mono,
-                    fontSize: 16,
-                    color: activeColors.ink,
-                    textAlign: "center",
-                    padding: 0,
-                  }}
-                />
-              </View>
             </View>
 
-            {/* Formula Explanation Preview */}
-            <Text
+            <Switch
+              value={isPackActive}
+              onValueChange={(val) => onUpdate("isPack", val)}
+              trackColor={{
+                false: activeColors.bg,
+                true: activeColors.accent + "80",
+              }}
+              thumbColor={isPackActive ? activeColors.accent : activeColors.inkDim}
+            />
+          </View>
+
+          {/* Expanded Pack Details */}
+          {isPackActive && (
+            <View
               style={{
-                fontFamily: fonts.mono,
-                fontSize: 11,
-                color: activeColors.accent,
                 marginTop: 8,
+                backgroundColor: activeColors.bg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: activeColors.panelBorder,
+                padding: 10,
               }}
             >
-              {t.calcExplanation(
-                item.price || "0",
-                item.qty || "1",
-                item.packCount || "1",
-                formattedUnitPrice,
-                item.unit || t.defaultUnit
-              )}
-            </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.body,
+                    fontSize: 13,
+                    color: activeColors.inkDim,
+                    flex: 1,
+                  }}
+                >
+                  {t.packCountLabel}:
+                </Text>
+
+                <View
+                  style={{
+                    width: 75,
+                    backgroundColor: activeColors.panel,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: activeColors.panelBorder,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                  }}
+                >
+                  <TextInput
+                    value={item.packCount ?? "1"}
+                    onChangeText={(text) => onUpdate("packCount", text)}
+                    placeholder={t.packCountPlaceholder}
+                    placeholderTextColor={activeColors.inkDim + "60"}
+                    keyboardType="decimal-pad"
+                    style={{
+                      fontFamily: fonts.mono,
+                      fontSize: 15,
+                      color: activeColors.ink,
+                      textAlign: "center",
+                      padding: 0,
+                    }}
+                  />
+                </View>
+              </View>
+
+              {/* Formula Explanation Preview */}
+              <Text
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 11,
+                  color: activeColors.accent,
+                  marginTop: 6,
+                }}
+              >
+                {t.calcExplanation(
+                  item.price || "0",
+                  item.qty || "1",
+                  item.packCount || "1",
+                  formattedUnitPrice,
+                  item.unit || t.defaultUnit
+                )}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Promotion / Discount Mode Toggle */}
+        <View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Tag size={15} color={activeColors.accent} />
+              <Text
+                style={{
+                  fontFamily: fonts.display,
+                  fontSize: 13,
+                  color: activeColors.ink,
+                }}
+              >
+                {t.promoModeToggle}
+              </Text>
+            </View>
+
+            <Switch
+              value={isPromoExpanded}
+              onValueChange={(val) => {
+                setIsPromoExpanded(val);
+                if (!val) {
+                  handleSelectDiscount("none");
+                }
+              }}
+              trackColor={{
+                false: activeColors.bg,
+                true: activeColors.accent + "80",
+              }}
+              thumbColor={isPromoExpanded ? activeColors.accent : activeColors.inkDim}
+            />
           </View>
-        )}
+
+          {/* Expanded Promotion Options */}
+          {isPromoExpanded && (
+            <View
+              style={{
+                marginTop: 8,
+                backgroundColor: activeColors.bg,
+                borderRadius: 10,
+                borderWidth: 1,
+                borderColor: activeColors.panelBorder,
+                padding: 10,
+              }}
+            >
+              {/* Promo Chips */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                {[
+                  { id: "bogo" as DiscountType, label: t.promoBogo },
+                  { id: "second_half" as DiscountType, label: t.promoSecondHalf },
+                  { id: "fixed" as DiscountType, label: t.promoFixed },
+                  { id: "percent" as DiscountType, label: t.promoPercent },
+                ].map((promo) => {
+                  const isSelected = item.discountType === promo.id;
+                  return (
+                    <TouchableOpacity
+                      key={promo.id}
+                      onPress={() => handleSelectDiscount(promo.id)}
+                      activeOpacity={0.8}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 8,
+                        backgroundColor: isSelected ? activeColors.accent : activeColors.panel,
+                        borderWidth: 1,
+                        borderColor: isSelected ? activeColors.accent : activeColors.panelBorder,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.display,
+                          fontSize: 12,
+                          color: isSelected ? activeColors.paperInk : activeColors.inkDim,
+                          fontWeight: isSelected ? "700" : "500",
+                        }}
+                      >
+                        {promo.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Value Input for Fixed or Percent Discount */}
+              {(item.discountType === "fixed" || item.discountType === "percent") && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                    marginTop: 4,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.body,
+                      fontSize: 12,
+                      color: activeColors.inkDim,
+                    }}
+                  >
+                    {item.discountType === "fixed" ? "฿ ส่วนลด:" : "% ส่วนลด:"}
+                  </Text>
+                  <View
+                    style={{
+                      width: 90,
+                      backgroundColor: activeColors.panel,
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor: activeColors.panelBorder,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <TextInput
+                      value={item.discountValue ?? ""}
+                      onChangeText={(val) => onUpdate("discountValue", val)}
+                      placeholder={item.discountType === "fixed" ? "10" : "15"}
+                      placeholderTextColor={activeColors.inkDim + "60"}
+                      keyboardType="decimal-pad"
+                      style={{
+                        fontFamily: fonts.mono,
+                        fontSize: 14,
+                        color: activeColors.ink,
+                        textAlign: "center",
+                        padding: 0,
+                      }}
+                    />
+                  </View>
+
+                  {computed.effectivePrice !== null && (
+                    <Text
+                      style={{
+                        fontFamily: fonts.mono,
+                        fontSize: 12,
+                        color: activeColors.good,
+                        flex: 1,
+                      }}
+                    >
+                      {t.netPriceNotice(computed.effectivePrice.toFixed(2))}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );

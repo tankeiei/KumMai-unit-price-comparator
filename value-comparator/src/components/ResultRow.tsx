@@ -107,11 +107,24 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language, ac
             style={{
               fontFamily: fonts.mono,
               fontSize: 12,
-              color: activeColors.inkDim,
+              fontWeight: "600",
+              color: isBest ? activeColors.good : activeColors.inkDim,
             }}
           >
             ฿{formattedUnitPrice} / {targetUnit}
           </Text>
+          {item.totalPayPrice !== undefined && item.totalPayPrice !== null && item.totalVolume && (
+            <Text
+              style={{
+                fontFamily: fonts.body,
+                fontSize: 10.5,
+                color: activeColors.inkDim + "90",
+                marginTop: 1,
+              }}
+            >
+              จ่ายจริง ฿{item.totalPayPrice.toFixed(2)} ({item.totalVolume} {targetUnit})
+            </Text>
+          )}
         </View>
       </View>
 

@@ -15,6 +15,192 @@ export function parseCleanFloat(str?: string | null): number {
  * Computes unit price, promo adjustments, and normalized base unit price for a single item.
  */
 export function computeUnitPrice(item: ComparisonItem): ComputedItem {
+  const promoType = item.promoType || "STANDARD";
+  const unitDef = findUnitDefinition(item.unit);
+  const multiplier = unitDef ? unitDef.multiplierToBase : 1;
+  const baseUnitId = unitDef ? unitDef.baseUnitId : item.unit.trim().toLowerCase() || "unit";
+
+  // Mode 1: BUNDLE_PRICE (e.g. 2 items for 35 THB, 62g each)
+  if (promoType === "BUNDLE_PRICE") {
+    const bundleQtyNum = parseCleanFloat(item.bundleQty || "2");
+    const bundlePriceNum = parseCleanFloat(item.bundlePrice || item.price);
+    const qtyPerPiece = parseCleanFloat(item.qty);
+
+    const isValid =
+      !isNaN(bundleQtyNum) &&
+      bundleQtyNum > 0 &&
+      !isNaN(bundlePriceNum) &&
+      bundlePriceNum > 0 &&
+      !isNaN(qtyPerPiece) &&
+      qtyPerPiece > 0;
+
+    if (!isValid) {
+      return {
+        ...item,
+        unitPrice: null,
+        effectiveQty: null,
+        effectivePrice: null,
+        totalPayPrice: null,
+        totalPieces: null,
+        totalVolume: null,
+        effectivePricePerPiece: null,
+        valid: false,
+        discountSummary: null,
+        promoSummary: null,
+      };
+    }
+
+    const totalPayPrice = bundlePriceNum;
+    const totalPieces = bundleQtyNum;
+    const totalRawVolume = totalPieces * qtyPerPiece;
+    const effectiveQty = totalRawVolume * multiplier;
+    const rawUnitPrice = totalPayPrice / totalRawVolume;
+    const baseUnitPrice = totalPayPrice / effectiveQty;
+    const effectivePricePerPiece = totalPayPrice / totalPieces;
+    const promoSummary = `${bundleQtyNum} ชิ้น ฿${bundlePriceNum}`;
+
+    return {
+      ...item,
+      unitPrice: rawUnitPrice,
+      effectiveQty,
+      effectivePrice: totalPayPrice,
+      totalPayPrice,
+      totalPieces,
+      totalVolume: totalRawVolume,
+      effectivePricePerPiece,
+      valid: true,
+      baseUnitId,
+      baseUnitPrice,
+      discountSummary: promoSummary,
+      promoSummary,
+    };
+  }
+
+  // Mode 2: BUY_X_GET_Y (e.g. Buy 2 Get 1 Free, 32 THB each, 69g each)
+  if (promoType === "BUY_X_GET_Y") {
+    const pricePerPiece = parseCleanFloat(item.price);
+    const buyQtyNum = parseCleanFloat(item.buyQty || "2");
+    const freeQtyNum = parseCleanFloat(item.freeQty || "1");
+    const qtyPerPiece = parseCleanFloat(item.qty);
+
+    const isValid =
+      !isNaN(pricePerPiece) &&
+      pricePerPiece > 0 &&
+      !isNaN(buyQtyNum) &&
+      buyQtyNum > 0 &&
+      !isNaN(freeQtyNum) &&
+      freeQtyNum >= 0 &&
+      !isNaN(qtyPerPiece) &&
+      qtyPerPiece > 0;
+
+    if (!isValid) {
+      return {
+        ...item,
+        unitPrice: null,
+        effectiveQty: null,
+        effectivePrice: null,
+        totalPayPrice: null,
+        totalPieces: null,
+        totalVolume: null,
+        effectivePricePerPiece: null,
+        valid: false,
+        discountSummary: null,
+        promoSummary: null,
+      };
+    }
+
+    const totalPieces = buyQtyNum + freeQtyNum;
+    const totalPayPrice = buyQtyNum * pricePerPiece;
+    const totalRawVolume = totalPieces * qtyPerPiece;
+    const effectiveQty = totalRawVolume * multiplier;
+    const rawUnitPrice = totalPayPrice / totalRawVolume;
+    const baseUnitPrice = totalPayPrice / effectiveQty;
+    const effectivePricePerPiece = totalPayPrice / totalPieces;
+    const promoSummary = `ซื้อ ${buyQtyNum} ฟรี ${freeQtyNum}`;
+
+    return {
+      ...item,
+      unitPrice: rawUnitPrice,
+      effectiveQty,
+      effectivePrice: totalPayPrice,
+      totalPayPrice,
+      totalPieces,
+      totalVolume: totalRawVolume,
+      effectivePricePerPiece,
+      valid: true,
+      baseUnitId,
+      baseUnitPrice,
+      discountSummary: promoSummary,
+      promoSummary,
+    };
+  }
+
+  // Mode 3: SECOND_ITEM_DISCOUNT (e.g. 1st item 100 THB, 2nd item 1 THB or 50% off)
+  if (promoType === "SECOND_ITEM_DISCOUNT") {
+    const price1st = parseCleanFloat(item.price);
+    const discountType = item.secondDiscountType || "FIXED_PRICE";
+    const discountVal = parseCleanFloat(item.secondDiscountValue || "1");
+    const qtyPerPiece = parseCleanFloat(item.qty);
+
+    const isValid =
+      !isNaN(price1st) &&
+      price1st > 0 &&
+      !isNaN(discountVal) &&
+      discountVal >= 0 &&
+      !isNaN(qtyPerPiece) &&
+      qtyPerPiece > 0;
+
+    if (!isValid) {
+      return {
+        ...item,
+        unitPrice: null,
+        effectiveQty: null,
+        effectivePrice: null,
+        totalPayPrice: null,
+        totalPieces: null,
+        totalVolume: null,
+        effectivePricePerPiece: null,
+        valid: false,
+        discountSummary: null,
+        promoSummary: null,
+      };
+    }
+
+    const price2nd =
+      discountType === "PERCENT"
+        ? Math.max(0, price1st * (1 - discountVal / 100))
+        : Math.max(0, discountVal);
+
+    const totalPieces = 2;
+    const totalPayPrice = price1st + price2nd;
+    const totalRawVolume = totalPieces * qtyPerPiece;
+    const effectiveQty = totalRawVolume * multiplier;
+    const rawUnitPrice = totalPayPrice / totalRawVolume;
+    const baseUnitPrice = totalPayPrice / effectiveQty;
+    const effectivePricePerPiece = totalPayPrice / totalPieces;
+    const promoSummary =
+      discountType === "PERCENT"
+        ? `ชิ้นที่ 2 ลด ${discountVal}%`
+        : `ชิ้นที่ 2 จ่าย ฿${discountVal}`;
+
+    return {
+      ...item,
+      unitPrice: rawUnitPrice,
+      effectiveQty,
+      effectivePrice: totalPayPrice,
+      totalPayPrice,
+      totalPieces,
+      totalVolume: totalRawVolume,
+      effectivePricePerPiece,
+      valid: true,
+      baseUnitId,
+      baseUnitPrice,
+      discountSummary: promoSummary,
+      promoSummary,
+    };
+  }
+
+  // Standard Mode
   const priceNum = parseCleanFloat(item.price);
   const qtyNum = parseCleanFloat(item.qty);
 
@@ -26,10 +212,6 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
     }
   }
 
-  const unitDef = findUnitDefinition(item.unit);
-  const multiplier = unitDef ? unitDef.multiplierToBase : 1;
-  const baseUnitId = unitDef ? unitDef.baseUnitId : item.unit.trim().toLowerCase() || "unit";
-
   let effectivePrice = priceNum;
   let promoMultiplierQty = 1;
   let discountSummary: string | null = null;
@@ -37,12 +219,10 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
   if (item.discountType && item.discountType !== "none") {
     switch (item.discountType) {
       case "bogo":
-        // Buy 1 Get 1: Effective quantity is doubled for the same price
         promoMultiplierQty = 2;
         discountSummary = "1 แถม 1";
         break;
       case "second_half":
-        // 2nd item 50% off: equivalent to 25% discount per unit
         effectivePrice = priceNum * 0.75;
         discountSummary = "ชิ้นที่ 2 ลด 50%";
         break;
@@ -82,8 +262,13 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
       unitPrice: null,
       effectiveQty: null,
       effectivePrice: null,
+      totalPayPrice: null,
+      totalPieces: null,
+      totalVolume: null,
+      effectivePricePerPiece: null,
       valid: false,
       discountSummary: null,
+      promoSummary: null,
     };
   }
 
@@ -95,10 +280,15 @@ export function computeUnitPrice(item: ComparisonItem): ComputedItem {
     unitPrice: rawUnitPrice,
     effectiveQty,
     effectivePrice,
+    totalPayPrice: effectivePrice,
+    totalPieces: packCountNum * promoMultiplierQty,
+    totalVolume: qtyNum * packCountNum * promoMultiplierQty,
+    effectivePricePerPiece: effectivePrice / (packCountNum * promoMultiplierQty),
     valid: true,
     baseUnitId,
     baseUnitPrice,
     discountSummary,
+    promoSummary: discountSummary,
   };
 }
 

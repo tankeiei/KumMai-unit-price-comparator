@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   useColorScheme,
+  Image,
 } from "react-native";
 import { RotateCcw, Scale, Settings, AlertTriangle } from "lucide-react-native";
 import { useComparatorStore } from "../src/store/comparatorStore";
@@ -34,6 +35,7 @@ export default function ComparatorScreen() {
     updateItem,
     removeItem,
     resetItems,
+    syncAllUnits,
     setLanguage,
     setTheme,
   } = useComparatorStore();
@@ -53,9 +55,9 @@ export default function ComparatorScreen() {
       >
         <ScrollView
           contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingTop: Platform.OS === "android" ? 40 : 16,
-            paddingBottom: 40,
+            paddingHorizontal: 16,
+            paddingTop: Platform.OS === "android" ? 28 : 12,
+            paddingBottom: 32,
           }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -63,21 +65,40 @@ export default function ComparatorScreen() {
           {/* Header Hero Section */}
           <View
             style={{
-              marginBottom: 24,
+              marginBottom: 14,
               flexDirection: "row",
               justifyContent: "space-between",
-              alignItems: "flex-start",
+              alignItems: "center",
             }}
           >
-            <View style={{ flex: 1, marginRight: 12 }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Scale size={28} color={activeColors.accent} />
+                <View
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 9,
+                    overflow: "hidden",
+                    backgroundColor: "#071B34",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: activeColors.panelBorder,
+                  }}
+                >
+                  <Image
+                    source={require("../assets/logo.png")}
+                    style={{ width: 36, height: 36 }}
+                    resizeMode="cover"
+                  />
+                </View>
                 <Text
                   style={{
                     fontFamily: fonts.display,
-                    fontSize: 28,
+                    fontSize: 22,
+                    fontWeight: "700",
                     color: activeColors.ink,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   }}
                 >
                   {t.appTitle}
@@ -86,9 +107,9 @@ export default function ComparatorScreen() {
               <Text
                 style={{
                   fontFamily: fonts.body,
-                  fontSize: 14,
+                  fontSize: 12,
                   color: activeColors.inkDim,
-                  marginTop: 4,
+                  marginTop: 2,
                 }}
               >
                 {t.appSubtitle}
@@ -96,23 +117,23 @@ export default function ComparatorScreen() {
             </View>
 
             {/* Header Action Buttons (Settings & Reset) */}
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               {/* Settings Button */}
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setIsSettingsOpen(true)}
                 style={{
-                  width: 36,
-                  height: 36,
+                  width: 32,
+                  height: 32,
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: activeColors.panel,
-                  borderRadius: 18,
+                  borderRadius: 16,
                   borderWidth: 1,
                   borderColor: activeColors.panelBorder,
                 }}
               >
-                <Settings size={16} color={activeColors.inkDim} />
+                <Settings size={15} color={activeColors.inkDim} />
               </TouchableOpacity>
 
               {/* Reset Button */}
@@ -124,18 +145,18 @@ export default function ComparatorScreen() {
                   alignItems: "center",
                   gap: 4,
                   backgroundColor: activeColors.panel,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 20,
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 16,
                   borderWidth: 1,
                   borderColor: activeColors.panelBorder,
                 }}
               >
-                <RotateCcw size={14} color={activeColors.inkDim} />
+                <RotateCcw size={13} color={activeColors.inkDim} />
                 <Text
                   style={{
                     fontFamily: fonts.body,
-                    fontSize: 12,
+                    fontSize: 11,
                     color: activeColors.inkDim,
                   }}
                 >
@@ -187,6 +208,7 @@ export default function ComparatorScreen() {
                 onUpdate={(field, value) => updateItem(item.id, field, value)}
                 onDuplicate={() => duplicateItem(item.id)}
                 onRemove={() => removeItem(item.id)}
+                onSyncAllUnits={(unit) => syncAllUnits(unit)}
                 activeColors={activeColors}
                 language={language}
                 isBest={bestItem !== null && item.id === bestItem.id && rankedItems.length > 0}
@@ -211,7 +233,11 @@ export default function ComparatorScreen() {
             />
           )}
 
-          <ResultReceipt rankedItems={rankedItems} language={language} />
+          <ResultReceipt
+            rankedItems={rankedItems}
+            language={language}
+            activeColors={activeColors}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
 

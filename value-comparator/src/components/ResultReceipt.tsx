@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, TouchableOpacity, Share } from "react-native";
 import { Receipt, Sparkles, Info, Share2 } from "lucide-react-native";
 import { LanguageMode, RankedItem } from "../types";
-import { colors } from "../theme/colors";
+import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { buildSummary } from "../utils/calculations";
 import { getTranslation } from "../constants/translations";
@@ -11,11 +11,13 @@ import { ResultRow } from "./ResultRow";
 interface ResultReceiptProps {
   rankedItems: RankedItem[];
   language: LanguageMode;
+  activeColors: AppColors;
 }
 
 export const ResultReceipt: React.FC<ResultReceiptProps> = ({
   rankedItems,
   language,
+  activeColors,
 }) => {
   const t = getTranslation(language);
   const summaryText = buildSummary(rankedItems, language);
@@ -65,18 +67,20 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
   };
 
   return (
-    <View style={{ marginBottom: 40 }}>
+    <View style={{ marginBottom: 32 }}>
       {/* Receipt Card Container */}
       <View
         style={{
-          backgroundColor: colors.paper,
+          backgroundColor: activeColors.panel,
           borderRadius: 16,
-          padding: 20,
+          padding: 16,
+          borderWidth: 1,
+          borderColor: activeColors.panelBorder,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.3,
-          shadowRadius: 10,
-          elevation: 8,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.15,
+          shadowRadius: 6,
+          elevation: 4,
         }}
       >
         {/* Receipt Top Header Barcode / Title */}
@@ -85,16 +89,17 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            marginBottom: 12,
+            marginBottom: 10,
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Receipt size={20} color={colors.paperInk} />
+            <Receipt size={18} color={activeColors.accent} />
             <Text
               style={{
                 fontFamily: fonts.display,
-                fontSize: 18,
-                color: colors.paperInk,
+                fontSize: 16,
+                fontWeight: "700",
+                color: activeColors.ink,
                 letterSpacing: 0.5,
               }}
             >
@@ -111,18 +116,20 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 5,
-                backgroundColor: colors.paperInk + "12",
-                paddingHorizontal: 10,
+                backgroundColor: activeColors.bg,
+                paddingHorizontal: 9,
                 paddingVertical: 5,
-                borderRadius: 14,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: activeColors.panelBorder,
               }}
             >
-              <Share2 size={13} color={colors.paperInk} />
+              <Share2 size={13} color={activeColors.inkDim} />
               <Text
                 style={{
                   fontFamily: fonts.display,
                   fontSize: 12,
-                  color: colors.paperInk,
+                  color: activeColors.inkDim,
                 }}
               >
                 {t.shareReceipt}
@@ -131,12 +138,12 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
           )}
         </View>
 
-        <View style={{ alignItems: "center", marginBottom: 12 }}>
+        <View style={{ alignItems: "center", marginBottom: 8 }}>
           <Text
             style={{
               fontFamily: fonts.mono,
               fontSize: 11,
-              color: colors.paperInk + "80",
+              color: activeColors.inkDim + "60",
               letterSpacing: 2,
             }}
           >
@@ -153,6 +160,7 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
                 item={item}
                 isBest={item.rank === 1}
                 language={language}
+                activeColors={activeColors}
               />
             ))}
 
@@ -160,25 +168,25 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
             {summaryText && (
               <View
                 style={{
-                  marginTop: 16,
-                  backgroundColor: colors.good + "25",
+                  marginTop: 12,
+                  backgroundColor: activeColors.goodBg,
                   borderWidth: 1.5,
-                  borderColor: colors.good,
-                  borderRadius: 12,
-                  padding: 14,
+                  borderColor: activeColors.good,
+                  borderRadius: 10,
+                  padding: 12,
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 10,
+                  gap: 8,
                 }}
               >
-                <Sparkles size={20} color={colors.paperInk} />
+                <Sparkles size={18} color={activeColors.good} />
                 <Text
                   style={{
                     flex: 1,
                     fontFamily: fonts.display,
-                    fontSize: 14,
-                    color: colors.paperInk,
-                    lineHeight: 20,
+                    fontSize: 13,
+                    color: activeColors.good,
+                    lineHeight: 18,
                   }}
                 >
                   {summaryText}
@@ -189,17 +197,17 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
         ) : (
           <View
             style={{
-              paddingVertical: 20,
+              paddingVertical: 16,
               alignItems: "center",
-              gap: 8,
+              gap: 6,
             }}
           >
-            <Info size={28} color={colors.paperInk + "60"} />
+            <Info size={24} color={activeColors.inkDim + "60"} />
             <Text
               style={{
                 fontFamily: fonts.body,
-                fontSize: 14,
-                color: colors.paperInk + "80",
+                fontSize: 13,
+                color: activeColors.inkDim,
                 textAlign: "center",
               }}
             >
@@ -209,14 +217,14 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
         )}
 
         {/* Receipt Footer Dashed Line & Watermark */}
-        <View style={{ marginTop: 16, alignItems: "center" }}>
+        <View style={{ marginTop: 12, alignItems: "center" }}>
           <Text
             style={{
               fontFamily: fonts.mono,
-              fontSize: 11,
-              color: colors.paperInk + "80",
+              fontSize: 10,
+              color: activeColors.inkDim + "60",
               letterSpacing: 2,
-              marginBottom: 8,
+              marginBottom: 6,
             }}
           >
             - - - - - - - - - - - - - - - - - - - - -
@@ -225,7 +233,7 @@ export const ResultReceipt: React.FC<ResultReceiptProps> = ({
             style={{
               fontFamily: fonts.body,
               fontSize: 11,
-              color: colors.paperInk + "70",
+              color: activeColors.inkDim + "80",
             }}
           >
             {t.receiptFooter}

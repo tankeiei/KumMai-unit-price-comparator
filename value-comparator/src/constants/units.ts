@@ -106,17 +106,27 @@ export const UNIT_DEFINITIONS: UnitDefinition[] = [
     baseUnitId: "ml",
   },
   {
-    id: "fl_oz",
-    aliases: ["fl oz", "floz", "fl_oz", "ฟลูอิดออนซ์"],
-    labelTh: "ฟลูอิดออนซ์",
-    labelEn: "fl oz",
-    icon: "💧",
+    id: "cc",
+    aliases: ["cc", "ซีซี", "ลบ.ซม.", "cm3", "ลูกบาศก์เซนติเมตร", "cm^3"],
+    labelTh: "ซีซี (ลบ.ซม.)",
+    labelEn: "cc (cm³)",
+    icon: "🧪",
     category: "liquid",
-    multiplierToBase: 29.5735,
+    multiplierToBase: 1,
     baseUnitId: "ml",
   },
 
   // --- Count (Base: pcs) ---
+  {
+    id: "unit",
+    aliases: ["หน่วย", "unit", "units"],
+    labelTh: "หน่วย",
+    labelEn: "unit",
+    icon: "🏷️",
+    category: "count",
+    multiplierToBase: 1,
+    baseUnitId: "pcs",
+  },
   {
     id: "pcs",
     aliases: ["pcs", "pc", "ชิ้น", "อัน", "ลูก", "ตัว", "แผ่น", "ขวด", "กล่อง", "กระป๋อง", "item", "items"],
@@ -133,16 +143,6 @@ export const UNIT_DEFINITIONS: UnitDefinition[] = [
     labelTh: "แพ็ค",
     labelEn: "pack",
     icon: "📦",
-    category: "count",
-    multiplierToBase: 1,
-    baseUnitId: "pcs",
-  },
-  {
-    id: "sachet",
-    aliases: ["sachet", "sachets", "ซอง"],
-    labelTh: "ซอง",
-    labelEn: "sachet",
-    icon: "✉️",
     category: "count",
     multiplierToBase: 1,
     baseUnitId: "pcs",
@@ -178,7 +178,7 @@ export interface UnitPreset {
 }
 
 export const UNIT_PRESETS: UnitPreset[] = UNIT_DEFINITIONS.filter((def) =>
-  ["pcs", "g", "kg", "ml", "l", "pack", "sachet"].includes(def.id)
+  ["unit", "pcs", "g", "kg", "ml", "cc", "l", "pack"].includes(def.id)
 ).map((def) => ({
   id: def.id,
   labelTh: def.labelTh,

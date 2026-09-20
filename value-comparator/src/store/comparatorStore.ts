@@ -13,6 +13,7 @@ interface ComparatorState {
   updateItem: (id: string, field: keyof ComparisonItem, value: any) => void;
   removeItem: (id: string) => void;
   resetItems: () => void;
+  syncAllUnits: (targetUnit: string) => void;
   setLanguage: (language: LanguageMode) => void;
   setTheme: (theme: ThemeMode) => void;
 }
@@ -28,13 +29,14 @@ const getIndexLetter = (index: number): string => {
 
 const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
   const t = translations[lang] || translations.th;
+  const initialUnit = t.defaultUnit || "หน่วย";
   return [
     {
       id: "1",
       name: `${t.optionPrefix} A`,
       price: "",
       qty: "",
-      unit: t.unitPresets[0] || "ชิ้น",
+      unit: initialUnit,
       isPack: false,
       packCount: "1",
       discountType: "none",
@@ -45,7 +47,7 @@ const createInitialItems = (lang: LanguageMode = "th"): ComparisonItem[] => {
       name: `${t.optionPrefix} B`,
       price: "",
       qty: "",
-      unit: t.unitPresets[0] || "ชิ้น",
+      unit: initialUnit,
       isPack: false,
       packCount: "1",
       discountType: "none",
@@ -70,7 +72,7 @@ export const useComparatorStore = create<ComparatorState>()(
             name: `${t.optionPrefix} ${nextLetter}`,
             price: "",
             qty: "",
-            unit: state.items[state.items.length - 1]?.unit || t.unitPresets[0],
+            unit: state.items[0]?.unit || t.defaultUnit || "หน่วย",
             isPack: false,
             packCount: "1",
             discountType: "none",
@@ -136,6 +138,11 @@ export const useComparatorStore = create<ComparatorState>()(
       resetItems: () =>
         set((state) => ({
           items: createInitialItems(state.language),
+        })),
+
+      syncAllUnits: (targetUnit: string) =>
+        set((state) => ({
+          items: state.items.map((item) => ({ ...item, unit: targetUnit })),
         })),
 
       setLanguage: (language) => set({ language }),

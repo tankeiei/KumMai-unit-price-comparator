@@ -72,12 +72,13 @@ export const BestValueCallout: React.FC<BestValueCalloutProps> = ({
           marginBottom: 12,
         }}
       >
-        <Trophy size={16} color={activeColors.paperInk} />
+        <Trophy size={16} color={activeColors.bg} />
         <Text
           style={{
             fontFamily: fonts.display,
             fontSize: 13,
-            color: activeColors.paperInk,
+            fontWeight: "700",
+            color: activeColors.bg,
           }}
         >
           {t.bestValueBadge}

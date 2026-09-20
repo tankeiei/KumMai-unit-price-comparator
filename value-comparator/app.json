@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "value-comparator",
+    "name": "คุ้มไหม?",
     "slug": "value-comparator",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,11 +10,11 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.kummai.unitpricecomparator",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#071B34",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false
     },
@@ -26,6 +26,12 @@
       "expo-status-bar",
       "expo-font",
       "expo-splash-screen"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "26aa846b-85ce-4807-930f-a21db9d4a783"
+      }
+    }
   }
 }

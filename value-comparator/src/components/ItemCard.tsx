@@ -1,14 +1,13 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Switch } from "react-native";
-import { Trash2, Package, Trophy, Copy, Tag } from "lucide-react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
+import { Trash2, Package, Trophy, Copy, Tag, ChevronDown, RefreshCw } from "lucide-react-native";
 import { ComparisonItem, DiscountType, LanguageMode } from "../types";
 import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { getTranslation } from "../constants/translations";
-import { UNIT_PRESETS, UnitCategory } from "../constants/units";
 import { computeUnitPrice } from "../utils/calculations";
-import { UnitChip } from "./UnitChip";
-import { CategoryTab } from "./CategoryTab";
+import { findUnitDefinition } from "../constants/units";
+import { UnitPickerModal } from "./UnitPickerModal";
 
 interface ItemCardProps {
   item: ComparisonItem;
@@ -17,6 +16,7 @@ interface ItemCardProps {
   onUpdate: (field: keyof ComparisonItem, value: any) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  onSyncAllUnits?: (unit: string) => void;
   activeColors: AppColors;
   language: LanguageMode;
   isBest?: boolean;
@@ -29,18 +29,22 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onUpdate,
   onDuplicate,
   onRemove,
+  onSyncAllUnits,
   activeColors,
   language,
   isBest = false,
 }) => {
   const t = getTranslation(language);
-  const [activeCategory, setActiveCategory] = useState<UnitCategory>("all");
-  const [isPromoExpanded, setIsPromoExpanded] = useState<boolean>(
+  const [isUnitPickerOpen, setIsUnitPickerOpen] = useState(false);
+  const [isPackExpanded, setIsPackExpanded] = useState(!!item.isPack);
+  const [isPromoExpanded, setIsPromoExpanded] = useState(
     !!(item.discountType && item.discountType !== "none")
   );
 
-  const isPackActive = !!item.isPack;
   const computed = computeUnitPrice(item);
+  const unitDef = findUnitDefinition(item.unit);
+  const unitIcon = unitDef?.icon || "🏷️";
+  const displayUnit = item.unit || t.defaultUnit;
 
   const formattedUnitPrice =
     computed.valid && computed.unitPrice !== null
@@ -48,17 +52,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           minimumFractionDigits: 2,
           maximumFractionDigits: 3,
         })
-      : "-";
-
-  const qtyLabelText = isPackActive ? t.packQtyLabel : t.qtyLabel;
-
-  const filteredPresets = UNIT_PRESETS.filter(
-    (preset) => activeCategory === "all" || preset.category === activeCategory
-  );
-
-  const handleSelectCategory = (cat: UnitCategory) => {
-    setActiveCategory(cat);
-  };
+      : null;
 
   const handleSelectDiscount = (type: DiscountType) => {
     onUpdate("discountType", type);
@@ -67,58 +61,86 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   };
 
+  const handlePromptSync = () => {
+    if (!onSyncAllUnits) return;
+    Alert.alert(
+      language === "en" ? "Sync Unit" : "ซิงค์หน่วยสินค้า",
+      language === "en"
+        ? `Apply unit "${displayUnit}" to all other options?`
+        : `ต้องการใช้หน่วย "${displayUnit}" กับทุกตัวเลือกหรือไม่?`,
+      [
+        {
+          text: language === "en" ? "Cancel" : "ยกเลิก",
+          style: "cancel",
+        },
+        {
+          text: language === "en" ? "Sync" : "ซิงค์",
+          onPress: () => onSyncAllUnits(displayUnit),
+        },
+      ]
+    );
+  };
+
+  const discountTypes: { type: DiscountType; label: string }[] = [
+    { type: "bogo", label: t.promoTagBogo },
+    { type: "second_half", label: t.promoTagSecondHalf },
+    { type: "percent", label: "%" },
+    { type: "fixed", label: "฿" },
+  ];
+
   return (
     <View
       style={{
         width: "100%",
-        backgroundColor: isBest ? activeColors.goodBg + "40" : activeColors.panel,
-        borderRadius: 16,
-        borderWidth: isBest ? 2.5 : 1.5,
+        backgroundColor: isBest ? activeColors.goodBg + "25" : activeColors.panel,
+        borderRadius: 14,
+        borderWidth: 1.5,
         borderColor: isBest ? activeColors.good : activeColors.panelBorder,
-        padding: 16,
-        marginBottom: 16,
-        shadowColor: isBest ? activeColors.good : "#000",
-        shadowOffset: { width: 0, height: isBest ? 4 : 2 },
-        shadowOpacity: isBest ? 0.3 : 0.1,
-        shadowRadius: isBest ? 8 : 4,
-        elevation: isBest ? 6 : 2,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
       }}
     >
-      {/* Header Row: Circular Number Badge, Name Input, Best Value Highlight Badge, Duplicate & Delete Buttons */}
+      {/* Row 1: Header (Number Badge, Name Input, Best Tag, Duplicate, Remove) */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 14,
+          marginBottom: 8,
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 }}>
-          {/* Circular Number Badge */}
+          {/* Index Badge */}
           <View
             style={{
-              width: 28,
-              height: 28,
-              borderRadius: 14,
+              width: 22,
+              height: 22,
+              borderRadius: 11,
               backgroundColor: isBest ? activeColors.good : activeColors.accent,
               alignItems: "center",
               justifyContent: "center",
-              marginRight: 10,
+              marginRight: 6,
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.mono,
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: "700",
-                color: activeColors.paperInk,
+                color: activeColors.bg,
               }}
             >
               #{index + 1}
             </Text>
           </View>
 
-          {/* Name Input */}
+          {/* Item Name */}
           <TextInput
             value={item.name}
             onChangeText={(text) => onUpdate("name", text)}
@@ -127,35 +149,36 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             style={{
               flex: 1,
               fontFamily: fonts.display,
-              fontSize: 18,
-              color: isBest ? activeColors.good : activeColors.accent,
+              fontSize: 15,
+              fontWeight: "600",
+              color: isBest ? activeColors.good : activeColors.ink,
               padding: 0,
               margin: 0,
             }}
           />
         </View>
 
-        {/* Action Badges & Buttons */}
+        {/* Right Header Badges & Actions */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          {/* Best Value Highlight Badge */}
           {isBest && (
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
+                gap: 3,
                 backgroundColor: activeColors.good,
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 12,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 8,
               }}
             >
-              <Trophy size={13} color={activeColors.paperInk} />
+              <Trophy size={11} color={activeColors.bg} />
               <Text
                 style={{
                   fontFamily: fonts.display,
-                  fontSize: 11,
-                  color: activeColors.paperInk,
+                  fontSize: 10,
+                  fontWeight: "700",
+                  color: activeColors.bg,
                 }}
               >
                 {t.bestValueHighlight}
@@ -163,79 +186,62 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </View>
           )}
 
-          {/* Duplicate Item Button */}
+          {/* Duplicate Button */}
           <TouchableOpacity
             onPress={onDuplicate}
             activeOpacity={0.7}
             style={{
-              padding: 7,
+              padding: 5,
+              borderRadius: 6,
               backgroundColor: activeColors.bg,
-              borderRadius: 18,
               borderWidth: 1,
               borderColor: activeColors.panelBorder,
             }}
           >
-            <Copy size={15} color={activeColors.accent} />
+            <Copy size={13} color={activeColors.inkDim} />
           </TouchableOpacity>
 
-          {/* Remove Item Button */}
+          {/* Remove Button */}
           {totalCount > 2 && (
             <TouchableOpacity
               onPress={onRemove}
               activeOpacity={0.7}
               style={{
-                padding: 7,
+                padding: 5,
+                borderRadius: 6,
                 backgroundColor: activeColors.bg,
-                borderRadius: 18,
                 borderWidth: 1,
                 borderColor: activeColors.panelBorder,
               }}
             >
-              <Trash2 size={15} color={activeColors.bad} />
+              <Trash2 size={13} color={activeColors.bad} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* 2-Column Grid Inputs: Price & Quantity / Pack Quantity */}
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 12,
-          marginBottom: 10,
-        }}
-      >
-        {/* Price Input Column */}
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontFamily: fonts.mono,
-              fontSize: 11,
-              color: activeColors.inkDim,
-              textTransform: "lowercase",
-              marginBottom: 4,
-            }}
-          >
-            {t.priceLabel}
-          </Text>
+      {/* Row 2: 3-Column Compact Inputs (Price | Qty | Unit Picker Button) */}
+      <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+        {/* Price Input */}
+        <View style={{ flex: 1.2 }}>
           <View
             style={{
-              backgroundColor: activeColors.bg,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: activeColors.panelBorder,
               flexDirection: "row",
               alignItems: "center",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              backgroundColor: activeColors.bg,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: activeColors.panelBorder,
+              paddingHorizontal: 8,
+              height: 38,
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.mono,
-                fontSize: 16,
+                fontSize: 14,
                 color: activeColors.inkDim,
-                marginRight: 6,
+                marginRight: 4,
               }}
             >
               ฿
@@ -249,7 +255,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               style={{
                 flex: 1,
                 fontFamily: fonts.mono,
-                fontSize: 18,
+                fontSize: 15,
+                fontWeight: "600",
                 color: activeColors.ink,
                 padding: 0,
               }}
@@ -257,28 +264,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           </View>
         </View>
 
-        {/* Quantity / Pack Quantity Input Column */}
+        {/* Quantity Input */}
         <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontFamily: fonts.mono,
-              fontSize: 11,
-              color: isPackActive ? activeColors.accent : activeColors.inkDim,
-              textTransform: "lowercase",
-              marginBottom: 4,
-              fontWeight: isPackActive ? "700" : "400",
-            }}
-          >
-            {qtyLabelText}
-          </Text>
           <View
             style={{
               backgroundColor: activeColors.bg,
-              borderRadius: 10,
+              borderRadius: 8,
               borderWidth: 1,
-              borderColor: isPackActive ? activeColors.accent + "80" : activeColors.panelBorder,
-              paddingHorizontal: 12,
-              paddingVertical: 8,
+              borderColor: activeColors.panelBorder,
+              paddingHorizontal: 8,
+              height: 38,
+              justifyContent: "center",
             }}
           >
             <TextInput
@@ -289,68 +285,145 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               keyboardType="decimal-pad"
               style={{
                 fontFamily: fonts.mono,
-                fontSize: 18,
+                fontSize: 15,
+                fontWeight: "600",
                 color: activeColors.ink,
                 padding: 0,
               }}
             />
           </View>
         </View>
+
+        {/* Unit Picker Trigger Button & Quick Sync Button */}
+        <View style={{ flex: 1.3, flexDirection: "row", gap: 5 }}>
+          <TouchableOpacity
+            onPress={() => setIsUnitPickerOpen(true)}
+            activeOpacity={0.7}
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: activeColors.bg,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: activeColors.panelBorder,
+              paddingHorizontal: 7,
+              height: 38,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flex: 1 }}>
+              <Text style={{ fontSize: 13 }}>{unitIcon}</Text>
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontFamily: fonts.body,
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: activeColors.ink,
+                }}
+              >
+                {displayUnit}
+              </Text>
+            </View>
+            <ChevronDown size={13} color={activeColors.inkDim} />
+          </TouchableOpacity>
+
+          {/* Quick Sync Button with Confirmation Prompt */}
+          {onSyncAllUnits && (
+            <TouchableOpacity
+              onPress={handlePromptSync}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 3,
+                paddingHorizontal: 7,
+                height: 38,
+                backgroundColor: activeColors.accent + "15",
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: activeColors.accent + "50",
+              }}
+            >
+              <RefreshCw size={11} color={activeColors.accent} />
+              <Text
+                style={{
+                  fontFamily: fonts.display,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: activeColors.accent,
+                }}
+              >
+                {language === "en" ? "Sync" : "ซิงค์"}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      {/* Live Unit Price Indicator Bar */}
-      {computed.valid && computed.unitPrice !== null && (
-        <View
-          style={{
-            marginBottom: 12,
-            backgroundColor: activeColors.bg,
-            borderRadius: 10,
-            borderWidth: 1,
-            borderColor: activeColors.accent + "50",
-            paddingHorizontal: 12,
-            paddingVertical: 7,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+      {/* Row 3: Live Unit Price Banner & Extra Feature Toggles */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingTop: 2,
+        }}
+      >
+        {/* Calculated Unit Price */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {formattedUnitPrice ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: isBest ? activeColors.goodBg : activeColors.bg,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderRadius: 6,
+                borderWidth: 1,
+                borderColor: isBest ? activeColors.good : activeColors.accent + "50",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: isBest ? activeColors.good : activeColors.accent,
+                }}
+              >
+                ฿{formattedUnitPrice} / {displayUnit}
+              </Text>
+            </View>
+          ) : (
             <Text
               style={{
                 fontFamily: fonts.body,
-                fontSize: 12,
-                color: activeColors.inkDim,
+                fontSize: 11,
+                color: activeColors.inkDim + "90",
               }}
             >
-              {t.liveUnitPriceLabel}:
+              {t.priceLabel} & {t.qtyLabel}
             </Text>
-            <Text
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 14,
-                fontWeight: "700",
-                color: activeColors.accent,
-              }}
-            >
-              ฿{formattedUnitPrice} / {item.unit || t.defaultUnit}
-            </Text>
-          </View>
+          )}
 
           {computed.discountSummary && (
             <View
               style={{
                 backgroundColor: activeColors.accent,
-                borderRadius: 6,
-                paddingHorizontal: 6,
-                paddingVertical: 2,
+                borderRadius: 4,
+                paddingHorizontal: 5,
+                paddingVertical: 1,
               }}
             >
               <Text
                 style={{
                   fontFamily: fonts.display,
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: "700",
-                  color: activeColors.paperInk,
+                  color: activeColors.bg,
                 }}
               >
                 {computed.discountSummary}
@@ -358,338 +431,215 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             </View>
           )}
         </View>
-      )}
 
-      {/* Unit Selection Row with Category Tabs & Icon Chips */}
-      <View style={{ marginBottom: 14 }}>
-        <Text
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 11,
-            color: activeColors.inkDim,
-            textTransform: "lowercase",
-            marginBottom: 6,
-          }}
-        >
-          {t.unitLabel}
-        </Text>
+        {/* Extra Action Buttons (Pack Mode & Promo Mode) */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          {/* Pack Mode Button */}
+          <TouchableOpacity
+            onPress={() => {
+              const nextState = !isPackExpanded;
+              setIsPackExpanded(nextState);
+              onUpdate("isPack", nextState);
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 3,
+              paddingHorizontal: 6,
+              paddingVertical: 3,
+              borderRadius: 6,
+              backgroundColor: isPackExpanded ? activeColors.accent + "25" : activeColors.bg,
+              borderWidth: 1,
+              borderColor: isPackExpanded ? activeColors.accent : activeColors.panelBorder,
+            }}
+          >
+            <Package
+              size={12}
+              color={isPackExpanded ? activeColors.accent : activeColors.inkDim}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.body,
+                fontSize: 10,
+                color: isPackExpanded ? activeColors.accent : activeColors.inkDim,
+                fontWeight: isPackExpanded ? "700" : "500",
+              }}
+            >
+              {language === "en" ? "Pack" : "แพ็ค"}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Category Tabs */}
-        <CategoryTab
-          activeCategory={activeCategory}
-          onSelectCategory={handleSelectCategory}
-          activeColors={activeColors}
-          language={language}
-        />
-
-        {/* Icon Unit Chips */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 6 }}>
-          {filteredPresets.map((preset) => {
-            const chipLabel = language === "en" ? preset.labelEn : preset.labelTh;
-            const isSelected =
-              item.unit === chipLabel ||
-              item.unit === preset.labelTh ||
-              item.unit === preset.labelEn;
-            return (
-              <UnitChip
-                key={preset.id}
-                label={chipLabel}
-                icon={preset.icon}
-                isSelected={isSelected}
-                onSelect={() => onUpdate("unit", chipLabel)}
-                activeColors={activeColors}
-              />
-            );
-          })}
+          {/* Promo Discount Button */}
+          <TouchableOpacity
+            onPress={() => {
+              const nextState = !isPromoExpanded;
+              setIsPromoExpanded(nextState);
+              if (!nextState) {
+                handleSelectDiscount("none");
+              }
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 3,
+              paddingHorizontal: 6,
+              paddingVertical: 3,
+              borderRadius: 6,
+              backgroundColor: isPromoExpanded ? activeColors.warning + "25" : activeColors.bg,
+              borderWidth: 1,
+              borderColor: isPromoExpanded ? activeColors.warning : activeColors.panelBorder,
+            }}
+          >
+            <Tag
+              size={12}
+              color={isPromoExpanded ? activeColors.warning : activeColors.inkDim}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.body,
+                fontSize: 10,
+                color: isPromoExpanded ? activeColors.warning : activeColors.inkDim,
+                fontWeight: isPromoExpanded ? "700" : "500",
+              }}
+            >
+              {language === "en" ? "Promo" : "ส่วนลด"}
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Custom Unit Input */}
-        <TextInput
-          value={item.unit}
-          onChangeText={(text) => onUpdate("unit", text)}
-          placeholder={t.customUnitPlaceholder}
-          placeholderTextColor={activeColors.inkDim + "60"}
-          style={{
-            backgroundColor: activeColors.bg,
-            borderRadius: 8,
-            borderWidth: 1,
-            borderColor: activeColors.panelBorder,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            fontFamily: fonts.body,
-            fontSize: 14,
-            color: activeColors.ink,
-          }}
-        />
       </View>
 
-      {/* Feature Toggles Section: Pack Mode & Promo Mode */}
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: activeColors.panelBorder + "80",
-          paddingTop: 10,
-          gap: 10,
-        }}
-      >
-        {/* Pack Mode Toggle */}
-        <View>
-          <View
+      {/* Collapsible Section: Pack Count Input (When Pack Mode is active) */}
+      {isPackExpanded && (
+        <View
+          style={{
+            marginTop: 8,
+            paddingTop: 8,
+            borderTopWidth: 1,
+            borderTopColor: activeColors.panelBorder,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
+              fontFamily: fonts.body,
+              fontSize: 12,
+              color: activeColors.inkDim,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Package size={15} color={activeColors.accent} />
-              <Text
-                style={{
-                  fontFamily: fonts.display,
-                  fontSize: 13,
-                  color: activeColors.ink,
-                }}
-              >
-                {t.packModeToggle}
-              </Text>
-            </View>
+            {t.packCountLabel}:
+          </Text>
+          <TextInput
+            value={item.packCount}
+            onChangeText={(text) => onUpdate("packCount", text)}
+            placeholder={t.packCountPlaceholder}
+            placeholderTextColor={activeColors.inkDim + "60"}
+            keyboardType="number-pad"
+            style={{
+              width: 70,
+              backgroundColor: activeColors.bg,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: activeColors.panelBorder,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              fontFamily: fonts.mono,
+              fontSize: 13,
+              color: activeColors.ink,
+              textAlign: "center",
+            }}
+          />
+        </View>
+      )}
 
-            <Switch
-              value={isPackActive}
-              onValueChange={(val) => onUpdate("isPack", val)}
-              trackColor={{
-                false: activeColors.bg,
-                true: activeColors.accent + "80",
-              }}
-              thumbColor={isPackActive ? activeColors.accent : activeColors.inkDim}
-            />
-          </View>
-
-          {/* Expanded Pack Details */}
-          {isPackActive && (
-            <View
-              style={{
-                marginTop: 8,
-                backgroundColor: activeColors.bg,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: activeColors.panelBorder,
-                padding: 10,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <Text
+      {/* Collapsible Section: Promotion / Discount Options (When Promo Mode is active) */}
+      {isPromoExpanded && (
+        <View
+          style={{
+            marginTop: 8,
+            paddingTop: 8,
+            borderTopWidth: 1,
+            borderTopColor: activeColors.panelBorder,
+            gap: 6,
+          }}
+        >
+          {/* Discount Type Chips */}
+          <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+            {discountTypes.map((dt) => {
+              const isSelected = item.discountType === dt.type;
+              return (
+                <TouchableOpacity
+                  key={dt.type}
+                  onPress={() => handleSelectDiscount(dt.type)}
+                  activeOpacity={0.7}
                   style={{
-                    fontFamily: fonts.body,
-                    fontSize: 13,
-                    color: activeColors.inkDim,
-                    flex: 1,
-                  }}
-                >
-                  {t.packCountLabel}:
-                </Text>
-
-                <View
-                  style={{
-                    width: 75,
-                    backgroundColor: activeColors.panel,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: activeColors.panelBorder,
                     paddingHorizontal: 8,
                     paddingVertical: 4,
-                  }}
-                >
-                  <TextInput
-                    value={item.packCount ?? "1"}
-                    onChangeText={(text) => onUpdate("packCount", text)}
-                    placeholder={t.packCountPlaceholder}
-                    placeholderTextColor={activeColors.inkDim + "60"}
-                    keyboardType="decimal-pad"
-                    style={{
-                      fontFamily: fonts.mono,
-                      fontSize: 15,
-                      color: activeColors.ink,
-                      textAlign: "center",
-                      padding: 0,
-                    }}
-                  />
-                </View>
-              </View>
-
-              {/* Formula Explanation Preview */}
-              <Text
-                style={{
-                  fontFamily: fonts.mono,
-                  fontSize: 11,
-                  color: activeColors.accent,
-                  marginTop: 6,
-                }}
-              >
-                {t.calcExplanation(
-                  item.price || "0",
-                  item.qty || "1",
-                  item.packCount || "1",
-                  formattedUnitPrice,
-                  item.unit || t.defaultUnit
-                )}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Promotion / Discount Mode Toggle */}
-        <View>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Tag size={15} color={activeColors.accent} />
-              <Text
-                style={{
-                  fontFamily: fonts.display,
-                  fontSize: 13,
-                  color: activeColors.ink,
-                }}
-              >
-                {t.promoModeToggle}
-              </Text>
-            </View>
-
-            <Switch
-              value={isPromoExpanded}
-              onValueChange={(val) => {
-                setIsPromoExpanded(val);
-                if (!val) {
-                  handleSelectDiscount("none");
-                }
-              }}
-              trackColor={{
-                false: activeColors.bg,
-                true: activeColors.accent + "80",
-              }}
-              thumbColor={isPromoExpanded ? activeColors.accent : activeColors.inkDim}
-            />
-          </View>
-
-          {/* Expanded Promotion Options */}
-          {isPromoExpanded && (
-            <View
-              style={{
-                marginTop: 8,
-                backgroundColor: activeColors.bg,
-                borderRadius: 10,
-                borderWidth: 1,
-                borderColor: activeColors.panelBorder,
-                padding: 10,
-              }}
-            >
-              {/* Promo Chips */}
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                {[
-                  { id: "bogo" as DiscountType, label: t.promoBogo },
-                  { id: "second_half" as DiscountType, label: t.promoSecondHalf },
-                  { id: "fixed" as DiscountType, label: t.promoFixed },
-                  { id: "percent" as DiscountType, label: t.promoPercent },
-                ].map((promo) => {
-                  const isSelected = item.discountType === promo.id;
-                  return (
-                    <TouchableOpacity
-                      key={promo.id}
-                      onPress={() => handleSelectDiscount(promo.id)}
-                      activeOpacity={0.8}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 5,
-                        borderRadius: 8,
-                        backgroundColor: isSelected ? activeColors.accent : activeColors.panel,
-                        borderWidth: 1,
-                        borderColor: isSelected ? activeColors.accent : activeColors.panelBorder,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontFamily: fonts.display,
-                          fontSize: 12,
-                          color: isSelected ? activeColors.paperInk : activeColors.inkDim,
-                          fontWeight: isSelected ? "700" : "500",
-                        }}
-                      >
-                        {promo.label}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Value Input for Fixed or Percent Discount */}
-              {(item.discountType === "fixed" || item.discountType === "percent") && (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8,
-                    marginTop: 4,
+                    borderRadius: 6,
+                    backgroundColor: isSelected ? activeColors.warning : activeColors.bg,
+                    borderWidth: 1,
+                    borderColor: isSelected ? activeColors.warning : activeColors.panelBorder,
                   }}
                 >
                   <Text
                     style={{
                       fontFamily: fonts.body,
-                      fontSize: 12,
-                      color: activeColors.inkDim,
+                      fontSize: 11,
+                      fontWeight: isSelected ? "700" : "500",
+                      color: isSelected ? activeColors.bg : activeColors.ink,
                     }}
                   >
-                    {item.discountType === "fixed" ? "฿ ส่วนลด:" : "% ส่วนลด:"}
+                    {dt.label}
                   </Text>
-                  <View
-                    style={{
-                      width: 90,
-                      backgroundColor: activeColors.panel,
-                      borderRadius: 8,
-                      borderWidth: 1,
-                      borderColor: activeColors.panelBorder,
-                      paddingHorizontal: 8,
-                      paddingVertical: 4,
-                    }}
-                  >
-                    <TextInput
-                      value={item.discountValue ?? ""}
-                      onChangeText={(val) => onUpdate("discountValue", val)}
-                      placeholder={item.discountType === "fixed" ? "10" : "15"}
-                      placeholderTextColor={activeColors.inkDim + "60"}
-                      keyboardType="decimal-pad"
-                      style={{
-                        fontFamily: fonts.mono,
-                        fontSize: 14,
-                        color: activeColors.ink,
-                        textAlign: "center",
-                        padding: 0,
-                      }}
-                    />
-                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-                  {computed.effectivePrice !== null && (
-                    <Text
-                      style={{
-                        fontFamily: fonts.mono,
-                        fontSize: 12,
-                        color: activeColors.good,
-                        flex: 1,
-                      }}
-                    >
-                      {t.netPriceNotice(computed.effectivePrice.toFixed(2))}
-                    </Text>
-                  )}
-                </View>
-              )}
+          {/* Discount Value Input (for fixed or percent) */}
+          {(item.discountType === "fixed" || item.discountType === "percent") && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+              <TextInput
+                value={item.discountValue}
+                onChangeText={(text) => onUpdate("discountValue", text)}
+                placeholder={
+                  item.discountType === "percent"
+                    ? language === "en" ? "e.g. 10%" : "เช่น 10%"
+                    : language === "en" ? "e.g. 20 THB" : "เช่น 20 บาท"
+                }
+                placeholderTextColor={activeColors.inkDim + "60"}
+                keyboardType="decimal-pad"
+                style={{
+                  flex: 1,
+                  backgroundColor: activeColors.bg,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: activeColors.panelBorder,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  fontFamily: fonts.mono,
+                  fontSize: 13,
+                  color: activeColors.ink,
+                }}
+              />
             </View>
           )}
         </View>
-      </View>
+      )}
+
+      {/* Unit Picker Modal */}
+      <UnitPickerModal
+        visible={isUnitPickerOpen}
+        onClose={() => setIsUnitPickerOpen(false)}
+        selectedUnit={item.unit}
+        onSelectUnit={(unit) => onUpdate("unit", unit)}
+        onSyncAllUnits={onSyncAllUnits}
+        activeColors={activeColors}
+        language={language}
+      />
     </View>
   );
 };

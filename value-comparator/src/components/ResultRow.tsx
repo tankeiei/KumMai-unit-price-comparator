@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Trophy } from "lucide-react-native";
 import { LanguageMode, RankedItem } from "../types";
-import { colors } from "../theme/colors";
+import { AppColors } from "../theme/colors";
 import { fonts } from "../theme/typography";
 import { getTranslation } from "../constants/translations";
 
@@ -10,9 +10,10 @@ interface ResultRowProps {
   item: RankedItem;
   isBest: boolean;
   language: LanguageMode;
+  activeColors: AppColors;
 }
 
-export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) => {
+export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language, activeColors }) => {
   const t = getTranslation(language);
 
   const targetPrice = item.displayUnitPrice ?? item.unitPrice;
@@ -49,9 +50,9 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
   return (
     <View
       style={{
-        paddingVertical: 12,
+        paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: colors.paperInk + "1A",
+        borderBottomColor: activeColors.panelBorder + "60",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -62,23 +63,25 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
         {/* Rank Badge Circle */}
         <View
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            backgroundColor: isBest ? colors.good : colors.paperInk + "10",
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            backgroundColor: isBest ? activeColors.good : activeColors.bg,
             alignItems: "center",
             justifyContent: "center",
+            borderWidth: 1,
+            borderColor: isBest ? activeColors.good : activeColors.panelBorder,
           }}
         >
           {isBest ? (
-            <Trophy size={16} color={colors.paperInk} />
+            <Trophy size={14} color={activeColors.bg} />
           ) : (
             <Text
               style={{
                 fontFamily: fonts.mono,
-                fontSize: 14,
+                fontSize: 12,
                 fontWeight: "700",
-                color: colors.paperInk + "80",
+                color: activeColors.inkDim,
               }}
             >
               #{item.rank}
@@ -91,8 +94,9 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
           <Text
             style={{
               fontFamily: fonts.display,
-              fontSize: 15,
-              color: colors.paperInk,
+              fontSize: 14,
+              fontWeight: "600",
+              color: activeColors.ink,
               marginBottom: 2,
             }}
             numberOfLines={1}
@@ -102,8 +106,8 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
           <Text
             style={{
               fontFamily: fonts.mono,
-              fontSize: 13,
-              color: colors.paperInk + "99",
+              fontSize: 12,
+              color: activeColors.inkDim,
             }}
           >
             ฿{formattedUnitPrice} / {targetUnit}
@@ -116,17 +120,18 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
         {isBest ? (
           <View
             style={{
-              backgroundColor: colors.good,
-              paddingHorizontal: 10,
-              paddingVertical: 4,
-              borderRadius: 12,
+              backgroundColor: activeColors.good,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 10,
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.display,
-                fontSize: 12,
-                color: colors.paperInk,
+                fontSize: 11,
+                fontWeight: "700",
+                color: activeColors.bg,
               }}
             >
               {t.bestValueBadge}
@@ -135,19 +140,19 @@ export const ResultRow: React.FC<ResultRowProps> = ({ item, isBest, language }) 
         ) : (
           <View
             style={{
-              backgroundColor: colors.bad + "20",
+              backgroundColor: activeColors.bad + "20",
               paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: 12,
+              paddingVertical: 3,
+              borderRadius: 10,
               borderWidth: 1,
-              borderColor: colors.bad + "40",
+              borderColor: activeColors.bad + "40",
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.mono,
-                fontSize: 12,
-                color: colors.bad,
+                fontSize: 11,
+                color: activeColors.bad,
                 fontWeight: "600",
               }}
             >

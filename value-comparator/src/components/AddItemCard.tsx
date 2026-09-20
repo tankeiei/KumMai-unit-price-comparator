@@ -25,36 +25,37 @@ export const AddItemCard: React.FC<AddItemCardProps> = ({
       onPress={onAdd}
       style={{
         width: "100%",
-        backgroundColor: activeColors.panel + "90",
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: activeColors.accent + "80",
+        backgroundColor: activeColors.panel,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: activeColors.accent + "60",
         borderStyle: "dashed",
-        paddingVertical: 16,
-        paddingHorizontal: 20,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
         alignItems: "center",
         justifyContent: "center",
         flexDirection: "row",
         gap: 8,
-        marginBottom: 24,
+        marginBottom: 16,
       }}
     >
       <View
         style={{
-          width: 28,
-          height: 28,
-          borderRadius: 14,
+          width: 24,
+          height: 24,
+          borderRadius: 12,
           backgroundColor: activeColors.accent,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Plus size={18} color={activeColors.paperInk} strokeWidth={2.5} />
+        <Plus size={15} color={activeColors.bg} strokeWidth={2.5} />
       </View>
       <Text
         style={{
           fontFamily: fonts.display,
-          fontSize: 16,
+          fontSize: 14,
+          fontWeight: "600",
           color: activeColors.accent,
         }}
       >
